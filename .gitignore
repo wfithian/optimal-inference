@@ -1,0 +1,15 @@
+lasso_example/*npz
+twodim_example/*npz
+ignore/*
+*.pdf
+*.aux
+*.log
+*.bbl
+*.blg
+*.nav
+*.out
+*.snm
+*.toc
+*~
+.DS_Store
+.Rhistory
