@@ -9,6 +9,7 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{tikz}
+\usepackage{authblk}
 \usetikzlibrary{shapes,arrows}
 \tikzstyle{block} = [rectangle, draw, fill=white!20,
     text width=7em, text centered, rounded corners, minimum height=4em]
@@ -75,8 +76,12 @@
 
 
 \title{Optimal Inference After Model Selection}
-\author{William Fithian\footnote{To whom correspondence should be addressed}\qquad Dennis Sun \qquad Jonathan Taylor\\[5pt]
-{\normalsize Stanford University, Department of Statistics}}
+\author{William Fithian\footnote{To whom correspondence should be addressed}}
+\affil{Department of Statistics, University of California Berkeley}
+\author{Dennis L. Sun}
+\affil{Department of Statistics, California Polytechnic State University}
+\author{Jonathan Taylor}
+\affil{Department of Statistics, Stanford University}
 \maketitle
 
 
@@ -85,34 +90,35 @@
 \end{abstract}
 
 
+
 \section{Introduction}\label{sec:intro}
 
 \noindent A typical statistical investigation can be thought of as consisting of two stages:
 \begin{description}
-\item[1. Selection:] The analyst chooses a probabilistic model for the data at hand, and formulates testing, estimation, or other problems in terms of unknown aspects of that model.
-\item[2. Inference:] The analyst attempts the chosen problems using the data and the selected model.
+\item[1. Selection:] The analyst chooses a statistical model for the data at hand, and formulates testing, estimation, or other problems in terms of unknown aspects of that model.
+\item[2. Inference:] The analyst investigates the chosen problems using the data and the selected model.
 \end{description}
 
 Informally, the selection stage determines what questions to ask, and the inference stage answers those questions. Most statistical methods carry an implicit assumption that selection is {\em non-adaptive} --- that is, choices about which model to use, hypothesis to test, or parameter to estimate, are made before seeing the data. {\em Adaptive selection} (also known colloquially as ``data snooping'') violates this assumption, formally invalidating any subsequent inference.
 
-In some cases, it is possible to specify the question prior to collecting the data---for instance, if the data are governed by some known physical law. However, in most applications, the choice of question is at least partially guided by the data. For example, we often perform exploratory analyses to decide which predictors or interactions to include in a regression model or to check whether the assumptions of a test are satisfied. In this work, we define a framework for valid inference after adaptive selection.
+In some cases, it is possible to specify the question prior to collecting the data---for instance, if the data are governed by some known physical law. However, in most applications, the choice of question is at least partially guided by the data. For example, we often perform exploratory analyses to decide which predictors or interactions to include in a regression model or to check whether the assumptions of a test are satisfied. The goal of this paper is to codify what it means for inference to be valid in the presence of adaptive selection and to propose methods that achieve this ``selective validity.''
 
 If we do not account properly for adaptive model selection, the resulting inferences can have troubling frequency properties, as we now illustrate with an example.
 
 \begin{example}[File Drawer Effect]
 \label{ex:file_drawer}
-Suppose a scientist observes $n$ independent observations $Y_i \sim N(\mu_i, 1)$. He focuses only on the apparently large effects, selecting only the indices $i$ for which $|Y_i|>1$, i.e.
+Suppose one or more scientific research groups make $n$ independent measurements of $n$ quantities, ${Y_i \sim N(\mu_i, 1)}$. They focus only on the apparently large effects, selecting (say) only the indices $i$ for which $|Y_i|>1$, i.e.
 \[ \hI = \{i : |Y_i| > 1\}. \]
-He wishes to test $H_{0,i}: \mu_i = 0$ for each $i \in \hI$ at the $\alpha = 0.05$ significance level. Most scientists intuitively recognize that the nominal test that rejects $H_{0,i}$ when $|Y_i| > 1.96$ is invalidated by the selection.
+Each scientist wishes to test $H_{0,i}: \mu_i = 0$ for his own $i \in \hI$ at significance level $\alpha = 0.05$. Most practitioners intuitively recognize that the nominal test that rejects $H_{0,i}$ when $|Y_i| > 1.96$ is invalidated by the selection.
 
-What exactly is ``invalid'' about this test? After all, the probability of falsely rejecting a given $H_{0,i}$ is still $\alpha$, since most of the time, $H_{0,i}$ is simply not tested at all. Rather, the troubling feature is that the error rate among the hypotheses {\em selected} for testing is possibly much higher than $\alpha$.
+What exactly is ``invalid'' about this test? After all, the probability of falsely rejecting a given $H_{0,i}$ is still $\P(|Y_i| > 1.96) = 0.05$, since $H_{0,i}$ is simply not tested at all most of the time. Rather, the troubling feature is that the error rate among the hypotheses {\em selected} for testing is possibly much higher than $\alpha$.
 To be precise, let $n_0$ be the number of true null effects and suppose $n_0 \to \infty$ as $n\to\infty$. Then, in the long run, the fraction of errors among the true nulls we test is
 \begin{align}
 \frac{\text{\# false rejections}}{\text{\# true nulls selected}} &= \genfrac{}{}{}{}
 {\raisebox{10pt}{$\dfrac{1}{n_0}\;\;\raisebox{3pt}{$\displaystyle\underset{{i:\,H_{0,i}\text{ true}}}\sum$} 1\{ i\in \hI,\ \text{reject $H_{0,i}$} \}$}}
 {\raisebox{-7pt}{$\dfrac{1}{n_0}\;\;\raisebox{3pt}{$\displaystyle\underset{{i:\,H_{0,i}\text{ true}}}\sum$} 1\{ i \in \hI \}$}}
 \nonumber\\[5pt]
-&\to \frac{\P_{H_{0,i}}(i \in \hI,\ \text{reject $H_{0,i}$})}{\P(i \in \hI)} \nonumber\\
+&\to \frac{\P_{H_{0,i}}(i \in \hI,\ \text{reject $H_{0,i}$})}{\P_{H_{0,i}}(i \in \hI)} \nonumber\\
 &= \P_{H_{0,i}}(\text{reject $H_{0,i}$}\ |\ i \in \hI), \label{eq:selective_type_1_error}
 \end{align}
 which for the nominal test is $\Phi(-1.96) / \Phi(-1)  \approx .16$.
@@ -129,7 +135,7 @@ This paper will develop a theory for inference after selection based on controll
 The answer must be valid, given that the question was asked.
 \end{center}
 
-For all its disarming simplicity, Example~\ref{ex:file_drawer} can be regarded as a stylized model of science. Imagine that each $Y_i$ represents an estimated effect size from a scientific study. However, only the large estimates are ever published---a caricature which may not be too far from the truth, as recently demonstrated by \citet{franco14}. To compound the problem, there may be many reasonable methodologies to choose from, even once the analyst has decided roughly what scientific question to address \citep{gelman2013garden}. Because of the resulting selection bias, the error rate among published claims may be very high, leading even to speculation that ``most published research findings are false'' \citep{ioannidis2005most}. Thus, selection effects may be a partial explanation for the replicability crisis and decline effect reported in the scientific community \citep{yong2012replication} and the popular media \citep{johnson2014new}.
+For all its simplicity, Example~\ref{ex:file_drawer} can be regarded as a stylized model of science. Imagine that each $Y_i$ represents an estimated effect size from a scientific study. However, only the large estimates are ever published---a caricature which may not be too far from the truth, as recently demonstrated by \citet{franco14}. To compound the problem, there may be many reasonable methodologies to choose from, even once the analyst has decided roughly what scientific question to address \citep{gelman2013garden}. Because of the resulting selection bias, the error rate among published claims may be very high, leading even to speculation that ``most published research findings are false'' \citep{ioannidis2005most}. Thus, selection effects may be a partial explanation for the replicability crisis reported in the scientific community \citep{yong2012replication} and the popular media \citep{johnson2014new}.
 
 The setting of Example~\ref{ex:file_drawer} has been studied extensively in the literature of simultaneous and selective inference, and several authors have proposed adjusting for selection by means of conditional inference. \citet{zollner2007overcoming} and \citet{zhong2008bias} construct selection-adjusted estimators and intervals for genome-wide association studies for genes that pass a fixed initial significance threshold, based on a conditional Gaussian likelihood.  \citet{cohen1989two} obtain unbiased estimates for the mean of the population whose sample mean is largest by conditioning on the ordering of the observed sample means, and \citet{sampson2005drop} and \citet{sill2009drop} apply the same idea to obtain estimates for the best-performing drug in an adaptive clinical trial design. \citet{hedges1984estimation} and \citet{hedges1992modeling} propose methods to adjust for the file drawer effect in meta-analysis when scientists only publish significant results.
 
@@ -145,7 +151,7 @@ In classical statistical inference, the notion of ``inference after selection'' 
 \end{equation}
 The subscript in~(\ref{eq:nominal_type_1}) reminds us that the probability is computed under the assumption that the data $Y$ are generated from model $M$, and $H_0$ is true; if $M$ is misspecified, there are no guarantees on the rejection probability.
 
-While ruling out model selection avoids the selection problem altogether, it does not realistically describe most statistical practice: statisticians are trained to check their models and to tweak them if they diagnose a problem. Under the purist view, model checking is technically forbidden, since it leaves open the possibility that the model will change after we see the data. We will argue that if the model and hypothesis are selected randomly, we should instead control the selective type I error rate
+In most statistical practice, it is unrealistic to rule out model selection altogether: statisticians are trained to check their models and to tweak them if they diagnose a problem (to a purist, even model checking is suspect, since it leaves open the possibility that the model will change after we see the data). We will argue that if the model and hypothesis are selected adaptively, we should instead control the selective type I error rate
 \begin{equation}
 \P_{M,H_0}( \text{reject $H_0$}\ |\ \text{$(M, H_0)$ selected} ) \leq \alpha.
 \label{eq:selective_type_1}
@@ -157,26 +163,26 @@ One can argue that models and hypotheses are practically never truly fixed but a
 \label{eq:independence}
 \end{equation}
 
-It may seem pedantic to point out that model selection is random if based on previous experiments. Even so, this viewpoint gives us a prescription for what to do when science does not dictate a model. If it is possible to split the data $Y = (Y_{1}, Y_{2})$ with $Y_{1}$ independent of $Y_{2}$, then we can imitate the scientific process by setting aside $Y_{1}$ for selection and $Y_{2}$ for inference. If selection depends on $Y_{1}$ only, then any nominal level-$\alpha$ test based on the value of $Y_{2}$ will satisfy \eqref{eq:independence}, so the nominal test based on $Y_{2}$ also controls the selective error \eqref{eq:selective_type_1}.
+While it may seem pedantic to point out that model selection is random if based on previous experiments, this viewpoint justifies a common prescription for what to do when previous experiments do not dictate a model. If it is possible to split the data $Y = (Y_{1}, Y_{2})$ with $Y_{1}$ independent of $Y_{2}$, then we can imitate the scientific process by setting aside $Y_{1}$ for selection and $Y_{2}$ for inference. If selection depends on $Y_{1}$ only, then any nominal level-$\alpha$ test based on the value of $Y_{2}$ will satisfy \eqref{eq:independence}, so the nominal test based on $Y_{2}$ also controls the selective error \eqref{eq:selective_type_1}.
 
-This meta-algorithm for generating selective procedures from nominal ones is called {\em data splitting} or {\em sample splitting}. The idea dates back at least as far as \citet{cox1975note}, and, despite the paucity of literature on the topic, is common wisdom among practitioners. For example, it is customary in genetics to use one cohort to identify loci of interest and a separate cohort to confirm them \citep{sladek2007genome}.
+This meta-algorithm for generating selective procedures from nominal ones is called {\em data splitting} or {\em sample splitting}. The idea dates back at least as far as \citet{cox1975note}, and, despite the paucity of literature on the topic, is common wisdom among practitioners. For example, it is customary in genetics to use one cohort to identify loci of interest and a separate cohort to confirm them \citep{sladek2007genome}. \citet{wasserman2009high} and \citet{meinshausen2009p} discuss data-splitting approaches to high-dimensional inference.
 
-The popularity of \sampOrData splitting owes in no small part to its transparent justification, which non-experts can easily appreciate: if we imagine that $Y_{1}$ is observed ``first,'' then we can proceed to analyze $Y_{2}$ as though model selection took place ``ahead of time.'' Equation (\ref{eq:independence}) guarantees that this temporal metaphor will not lead us astray even if it does not describe how $Y_{1}$ and $Y_{2}$ were actually collected.
+Data splitting owes much of its popularity to its transparent justification, which even a non-expert can appreciate: if we imagine that $Y_{1}$ is observed ``first,'' then we can proceed to analyze $Y_{2}$ as though model selection took place ``ahead of time.'' Equation (\ref{eq:independence}) guarantees that this temporal metaphor will not lead us astray even if it does not describe how $Y_{1}$ and $Y_{2}$ were actually collected.
 
-\capSampOrData splitting elegantly solves the problem of controlling selective error, but at a cost. It not only reduces the amount of data available for inference, but also reduces the amount of data available for selection. Furthermore, it is not always possible; for example, spatial and time series data often exhibit autocorrelation that rules out splitting the data into independent parts.
+\capSampOrData splitting elegantly solves the problem of controlling selective error, but at a cost. It not only reduces the amount of data available for inference, but also reduces the amount of data available for selection. Furthermore, it is not always possible to split the data into independent parts, as in the case of autocorrelated spatial and time series data.
 
-In this article, we propose directly controlling the selective error rate \eqref{eq:selective_type_1} by conditioning on the event that $(M,H_0)$ is selected. As with \sampOrData splitting, we treat the data as though it were revealed in stages: in the first stage, we ``observe'' just enough data to resolve the decision of whether to test $(M,H_0)$, after which we can treat the data $(Y \gv (M, H_0)\text{ selected})$ as ``not yet observed'' when stage two commences.
+In this article, we propose directly controlling the selective error rate \eqref{eq:selective_type_1} by conditioning on the event that $(M,H_0)$ is selected. As with \sampOrData splitting, we treat the data as though it were revealed in stages: in the first stage, we ``observe'' just enough data to resolve the decision of whether to test $(M,H_0)$, after which we can treat the data $(Y \gv (M, H_0)\text{ selected})$ as ``not yet observed'' when the second stage commences.
 
 The intuition of the above paragraph can be expressed formally in terms of the filtration
 \begin{equation}\label{eq:sampleCarving}
   \sF_0 \underlabel_{\text{used for selection}} \sF(\1_A(Y))
   \underlabel_{\text{used for inference}} \sF(Y),
 \end{equation}
-where $\sF(Z)$ denotes the $\sigma$-algebra generated by random variable $Z$ (informally, everything we know about the data after observing $Z$), $\sF_0$ is the trivial $\sigma$-algebra (representing complete ignorance), and $A$ is the {\em selection event} $\{(M, H_0)\text{ selected}\}$. We can think of ``time'' as progressing from left to right in~(\ref{eq:sampleCarving}). In stage one, we learn just enough to decide whether to test $(M,H_0)$, and no more, advancing our state of knowledge from $\sF_0$ to $\sF(\1_A(Y))$. We then begin stage two, in which we discover the actual value of $Y$, advancing our knowledge to $\sF(Y)$. Because our selection decision is made at the end of stage one, everything revealed during stage two is fair game for inference.
+where $\sF(Z)$ denotes the $\sigma$-algebra generated by a random variable $Z$ (informally, everything we know about the data after observing $Z$), $\sF_0$ is the trivial $\sigma$-algebra (representing complete ignorance), and $A$ is the {\em selection event} $\{(M, H_0)\text{ selected}\}$. We can think of ``time'' as progressing from left to right in~(\ref{eq:sampleCarving}). In stage one, we learn just enough to decide whether to test $(M,H_0)$, and no more, advancing our state of knowledge from $\sF_0$ to $\sF(\1_A(Y))$. We then begin stage two, in which we discover the actual value of $Y$, advancing our knowledge to $\sF(Y)$. Because our selection decision is made at the end of stage one, everything revealed during stage two is fair game for inference.
 
 
 In effect, controlling the type I error conditional on $A$ prevents us from appealing to the fact that $Y\in A$ as evidence against $H_0$. Even if $Y\in A$ is extremely surprising under $H_0$, we still will not reject unless we are surprised anew in the second stage.
-In this sense, conditioning on a random variable discards the information it carries about any parameter or hypothesis of interest. By contrast with \sampOrData splitting, which can be viewed as conditioning on $Y_{1}$ instead of $\1_A(Y_{1})$, we advocate discarding as little data as possible and reserving the rest for stage two. This frugality results in a more efficient division of the information carried by $Y$ --- {\em \sampOrData carving}, to introduce an evocative metaphor.
+In this sense, conditioning on a random variable discards the information it carries about any parameter or hypothesis of interest. In contrast to data splitting, which can be viewed as conditioning on $Y_{1}$ instead of $\1_A(Y_{1})$, we advocate discarding as little information as possible and reserving the rest for stage two. This frugality results in a more efficient division of the information carried by $Y$, which we call {\em \sampOrData carving}.
 
 \subsection{Outline}
 
@@ -185,8 +191,8 @@ In Section~\ref{sec:selInf} we formalize the problem of selective inference, dis
 If $\cL(Y)$, the law of random variable $Y$, follows an exponential family model, then for any event $A$, $\cL(Y \gv A)$ follows a closely related exponential family model. As a result, selective inference dovetails naturally with the classical optimality theory of \citet{lehmann1955completeness}; Section~\ref{sec:exfam} briefly reviews this theory and derives most powerful unbiased selective tests in arbitrary exponential family models after arbitrary model selection procedures. Because conditioning on more data than is necessary saps the power of second-stage tests, \sampOrData splitting yields inadmissible selective tests under general conditions.
 
 Section~\ref{sec:approxInt} gives some general strategies for
-computing rejection cutoffs for the tests prescribed in Section~\ref{sec:exfam}, while Sections~\ref{sec:linReg}--\ref{sec:examples} derive selective tests in specific examples. Section~\ref{sec:linReg} focuses on the case of linear regression, generalizing the recent proposals of~\citet{taylor2014post}, \citet{lee2013exact}, and others. We
-derive new, more powerful selective $z$-tests, as well as $t$-tests that do not require knowledge of the error variance $\sigma^2$.
+computing rejection cutoffs for the tests prescribed in Section~\ref{sec:exfam}, while Sections~\ref{sec:linReg}--\ref{sec:examples} derive selective tests in specific examples. Section~\ref{sec:linReg} focuses on the case of linear regression, generalizing the recent proposals of~\citet{tibshirani2014exact}, \citet{lee2016exact}, and others. We
+derive new, more powerful selective $z$-tests, as well as selective $t$-tests that do not require knowledge of the error variance $\sigma^2$.
 
 Several simulations in Section~\ref{sec:simulation} compare the post-lasso selective $z$-test with \sampOrData splitting, and illustrate a {\em selection--inference tradeoff}, between using more data in the initial stage and reserving more information for the second stage. Section~\ref{sec:multiple} compares and contrasts selective inference with multiple inference, and Section~\ref{sec:discussion} concludes.
 
@@ -198,27 +204,27 @@ In the previous section, we motivated the idea of conditioning on selection. Arg
 \begin{equation}\label{eq:fullModel}
   Y \sim N_n(\mu, \;\sigma^2 I_n).
 \end{equation}
-The goal is to model the mean $\mu$ as a linear function of predictors $X_j$, $j=1,\ldots, p$. To obtain a more parsimonious model (or simply an identifiable model when $p > n$), researchers will often use only a subset $M \sub\{1,\ldots, p \}$ of the predictors. Each subset $M$ leads to a different probabilistic model corresponding to the assumption $\mu=\bX_M \beta^{M}$, where $\bX_M$ denotes the matrix consisting of columns $X_j$ for $j\in M$. Then, it is customary to report tests of $H_{0,j}^M: \beta^M_j = 0$ for each coefficient in the model. If $M$ was chosen in a data-dependent way, then to control selective error we must condition on having selected $(M, H_{0,j}^M)$, which in this case is the same as conditioning on having selected model $M$.
+The goal is to model the mean $\mu$ as a linear function of predictors $X_j$, $j=1,\ldots, p$. To obtain a more parsimonious model (or simply an identifiable model when $p > n$), researchers will often use only a subset $M \sub\{1,\ldots, p \}$ of the predictors. Each subset $M$ leads to a different statistical model corresponding to the assumption $\mu=\bX_M \beta^{M}$, where $\bX_M$ denotes the matrix consisting of columns $X_j$ for $j\in M$. Then, it is customary to report tests of $H_{0,j}^M: \beta^M_j = 0$ for each coefficient in the model. If $M$ was chosen in a data-dependent way, then to control selective error we must condition on having selected $(M, H_{0,j}^M)$, which in this case is the same as conditioning on having selected model $M$.
 
-There are many data-driven methods for variable selection in linear regression, ranging from AIC minimization to forward stepwise selection, cf. \citet{hastie2009elements}. We will consider one procedure in particular, based on the lasso, mostly because selective inference in the context of the lasso \citep{lee2013exact} was a main motivation for the present work. The lasso \citep{tibshirani1996regression} provides an estimate of $\beta \in \R^p$ that solves
+There are many data-driven methods for variable selection in linear regression, ranging from AIC minimization to forward stepwise selection, cf. \citet{hastie2009elements}. We will consider one procedure in particular, based on the lasso, mostly because selective inference in the context of the lasso \citep{lee2016exact} was a main motivation for the present work. The lasso \citep{tibshirani1996regression} provides an estimate of $\beta \in \R^p$ that solves
 \begin{equation}
 \hat\beta = \underset{\beta}{\text{argmin}}\ ||Y - X\beta||_2^2 + \lambda ||\beta||_1,
 \end{equation}
 where $X$ is the ``full'' matrix consisting of all $p$ predictors. The first term is the usual least-squares objective, while the second term encourages many of the coefficients to be exactly zero. Because of this property, it makes sense to define the model ``selected'' by the lasso to be the set of variables with non-zero coefficients, i.e.,
 \[ \hM(Y) = \{ j: \hat\beta_j \neq 0 \}. \]
 
-Notice that $\hM(Y)$ can take on up to $2^p$ possible values, one for each subset of $\{1, ..., p\}$. The regions $A_M = \{y: \hM(y) = M\}$ form a partition of $\R^n$ into regions that correspond to each model. To control the selective error after selecting a particular $M$, we must condition on the event that $Y$ landed in $A_M$. The partition for a lasso problem with $p=3$ variables in $n=2$ dimensions is shown in Figure \ref{fig:lasso_partition}. An explicit characterization of the lasso partition can be found in \citet{lee2013exact}; see also \citet{harris2014visualizing} for more plots visualizing the way the lasso partitions the sample space. If we used a different selection procedure, we would obtain a different partition. Characterizations of the partitions in forward stepwise selection and marginal screening can be found in \citet{loftus2014significance} and \citet{lee2014marginal}, respectively.
+Notice that $\hM(Y)$ can take on up to $2^p$ possible values, one for each subset of $\{1, ..., p\}$. The regions $A_M = \{y: \hM(y) = M\}$ form a partition of $\R^n$ into regions that correspond to each model. To control the selective error after selecting a particular $M$, we must condition on the event that $Y$ landed in $A_M$. The partition for a lasso problem with $p=3$ variables in $n=2$ dimensions is shown in Figure \ref{fig:lasso_partition}. An explicit characterization of the lasso partition can be found in \citet{lee2016exact}; see also \citet{harris2014visualizing} for an interactive visualization of the way the lasso partitions the sample space. A different selection procedure would partition the sample space differently; characterizations of the partitions in forward stepwise selection and marginal screening can be found in \citet{loftus2014significance} and \citet{lee2014marginal}, respectively.
 
 \begin{figure}
 % source code: code/misc_plots/figs_lasso.py
 \begin{center}
 \includegraphics[trim = 23mm 23mm 23mm 23mm, clip=TRUE, width=.4\textwidth]{figs/fig_lasso1.png}
 \end{center}
-\caption{An example of the lasso with $n=2$ observations and $p=3$ variables. We base tests on the distribution of $Y$, conditional on its landing in the highlighted region.}
+\caption{An example of the lasso with $n=2$ observations and $p=3$ variables.Tests are based on the distribution of $Y$, conditional on its landing in the highlighted region.}
 \label{fig:lasso_partition}
 \end{figure}
 
-Let us imagine that in stage one, we loaded the data into a software package and computed $\hM(Y)$, but we remain otherwise ignorant of the value $Y$ --- that is, we have observed {\em which} of the regions $Y$ falls into but not {\em where} $Y$ is in that region. Now that we have chosen the model, we will construct tests of $H_{0,j}^M: \beta^M_j = 0$ for each of the selected variables. In the example shown in Figure \ref{fig:lasso_partition}, we selected variables $1$ and $3$ and thus test the two hypotheses
+Imagine that in stage one, we loaded the data into a software package and computed $\hM(Y)$, but we remain otherwise ignorant of the value $Y$ --- that is, we have observed {\em which} of the regions $Y$ falls into but not {\em where} $Y$ is in that region. Now that we have chosen the model, we will construct tests of $H_{0,j}^M: \beta^M_j = 0$ for each of the selected variables. In the example shown in Figure \ref{fig:lasso_partition}, we selected variables $1$ and $3$ and thus test the two hypotheses
 \begin{align*}
 H^{\{1, 3\}}_{0, 1}&: \beta^{\{1, 3\}}_1 = 0 \\
 H^{\{1, 3\}}_{0, 3}&: \beta^{\{1, 3\}}_3 = 0.
@@ -235,7 +241,7 @@ We first discuss selective inference in the context of hypothesis testing. The c
 
 We now introduce notation that we will use for the remainder of the article. Assume that our data $Y$ lies in some measurable space $(\cY, \sF)$, with unknown sampling distribution $Y\sim F$. The analyst's task is to pose a reasonable probability model $M$ --- i.e., a family of distributions which she believes contains $F$ --- and then carry out inference based on the observation $Y$.
 
-Let $\cQ$ denote the {\em question space} of inference problems $q$ we might tackle. A hypothesis testing problem is a pair $q=(M,H_0)$ of a model $M$ and null hypothesis $H_0$, by which we mean a submodel $H_0\sub M$.\footnote{We identify a ``null hypothesis'' like $H_0:\,\mu(F)=0$ with the corresponding subfamily or ``null model'' ${\{F\in M:\, \mu(F)=0\}}$. This should remind us that the error guarantees of a test do not necessarily extend beyond the model it was designed for.} We write $M(q)$ and $H_0(q)$ for the model and hypothesis corresponding to $q$. Without loss of generality, we assume $H_0(q)$ is tested against the alternative hypothesis $H_1(q)=M(q)\setminus H_0(q)$. To avoid measurability issues, we will assume throughout that $\cQ$ is countable, although our framework can be extended to other question spaces with additional care.
+Let $\cQ$ denote the {\em question space} of inference problems $q$ we might tackle. A hypothesis testing problem is a pair $q=(M,H_0)$ of a model $M$ and null hypothesis $H_0$, by which we mean a submodel $H_0\sub M$.\footnote{We identify a ``null hypothesis'' like $H_0:\,\mu(F)=0$ with the corresponding subfamily or ``null model'' ${\{F\in M:\, \mu(F)=0\}}$. This should remind us that the error guarantees of a test do not necessarily extend beyond the model it was designed for.} We write $M(q)$ and $H_0(q)$ for the model and hypothesis corresponding to $q$. Without loss of generality, we assume $H_0(q)$ is tested against the alternative hypothesis $H_1(q)=M(q)\setminus H_0(q)$. To avoid measurability issues, we will assume throughout that $\cQ$ is countable, although our framework can be extended to uncountable $\cQ$ with additional care.
 
 In Section~\ref{sec:lassoRegression} where we test each variable in a selected regression model, the question space is
 \[ \cQ = \{ (M, H^M_{0, j}): M \sub \{1, \ldots, p\}, j \in M \}. \]
@@ -245,10 +251,10 @@ Note our slight abuse of notation in using $M$ interchangeably to refer both to 
 We model selective inference as a process with two distinct stages:
 \begin{description}
 \item[1. Selection:] From the collection $\cQ$ of possible questions, the analyst selects a subset $\hcQ(Y)\sub \cQ$ to test, based on the data.
-\item[2. Inference:] The analyst performs a hypothesis test of $H_0(q)$ against $M(q)\setminus H_0(q)$ for each $q \in \hcQ$.
+\item[2. Inference:] The analyst performs a hypothesis test of $H_0(q)$ against $M(q)\setminus H_0(q)$ for each $q \in \hcQ(Y)$.
 \end{description}
 
-In the case of the simple regression example shown in Figure \ref{fig:lasso_partition}, where we selected variables 1 and 3, $\hcQ$ would consist of the hypotheses for each of the two variables in the model. To be completely explicit,
+In the case of the simple regression example shown in Figure \ref{fig:lasso_partition}, where we selected variables 1 and 3, $\hcQ$ would consist of the hypotheses for each of the two variables in the model:
 \[ \hcQ(Y) = \left\{ \left(\{1, 3\}, H^{\{1, 3\}}_{0, 1}\right), \left(\{1, 3\}, H^{\{1, 3\}}_{0, 3}\right) \right\}. \]
 
 A correctly specified model $M$ is one that contains the true sampling distribution $F$. Importantly, we expressly do not assume that all --- or any --- of the candidate models are correctly specified. Because the analyst must choose $M$ without knowing $F$, she could choose poorly, in which case there may be no formal guarantees on the behavior of the test she performs in stage two. Some degree of misspecification is the rule rather than the exception in most real statistical applications, whether models are specified adaptively or non-adaptively. Our analyst would be in the same position if she were to select a (probably wrong) model using $Y$, then use that model to perform a test on new data $Y^*$ collected in a confirmatory experiment. See Section~\ref{sec:modelWrong} for further discussion of this issue.
@@ -260,11 +266,11 @@ To adjust for selection in testing $q$, we condition on the event that the quest
 A_q = \{q \in \hcQ(Y) \},
 \label{eq:A_q}
 \end{equation}
-i.e., the event that $q$ is among the questions asked. In general, the selection events for different questions are not disjoint. In the regression example, we only ever test $H^M_{0, j}$ when model $M$ is selected, so conditioning on $A_q$ is equivalent to simply conditioning on $\hM$.
+i.e., the event that $q$ is among the questions asked. In general, the selection events for different questions are not disjoint. In the regression example, where we test $H^M_{0, j}$ if and only if model $M$ is selected, conditioning on $A_q$ is equivalent to simply conditioning on $\hM$. By convention we take $\phi_q(Y) = 0$ for $Y\notin A_q$ to reflect the idea that if a hypothesis is not tested then it is not rejected; note this convention does not affect the selective properties of $\phi_q$.
 
 In selective inference, we are mainly interested in the properties of a test $\phi_q$ for a question $q$, conditional on $A_q$. We say that $\phi_q$ controls {\em selective type I error} at level $\alpha$ if
 \begin{equation}\label{eq:selT1}
-\E_F\left[\phi_q(Y) \gv A_q\right] \leq \alpha, \;\; \text{ for all } F\in H_0.
+\E_F\left[\phi_q(Y) \gv A_q\right] \leq \alpha, \;\; \text{ for all } F\in H_0(q).
 \end{equation}
 and define its {\em selective power function} as
 \begin{equation}\label{eq:selPow}
@@ -272,13 +278,21 @@ and define its {\em selective power function} as
 \end{equation}
 Because $\cQ$ is countable, the only relevant $q$ are those for which $\P(A_q) > 0$.
 
-Notice that only the model $M$ and hypothesis $H_0$ are relevant for defining the selective level of a test. This means that in designing valid $\phi_q$, we can concentrate on one $q$ at a time, even if there are many mutually incompatible candidate models in $\cQ$. As long as each $\phi_q$ controls the selective error at level $\alpha$ given its selection event $A_q$, then a global error is also controlled:
+Notice that only the model $M(q)$ and hypothesis $H_0(q)$ are relevant for defining the selective level and power of a test $\phi_q$. This means that in designing valid $\phi_q$, we can concentrate on one $q$ at a time, even if there are many mutually incompatible candidate models in $\cQ$. As long as each $\phi_q$ controls the selective error at level $\alpha$ given its selection event $A_q$, then a global error is also controlled:
 \begin{equation}\label{eq:oneAtTime}
   \frac{\E\left[\text{\# false rejections}\right]}{\E\left[\text{\# true nulls selected} \right]} \leq \alpha,
 \end{equation}
-provided that the denominator is finite. (\ref{eq:oneAtTime}) holds for countable $\cQ$ regardless of the dependence structure across different $q$. The fact that we can design tests one $q$ at a time makes it much easier to devise selective tests in concrete examples, which we take up in Sections~\ref{sec:exfam}--\ref{sec:examples}.
+provided that the denominator is finite. Equation~(\ref{eq:oneAtTime}) holds for countable $\cQ$ regardless of the dependence structure across different $q$. The fact that we can design tests one $q$ at a time makes it much easier to devise selective tests in concrete examples, which we take up in Sections~\ref{sec:exfam}--\ref{sec:examples}.
 
-Suppose that each scientist in a discipline controls the selective error rate for each of his or her own experiments. Then the discipline as a whole will achieve long-run control of the type I error rate among true {\em selected} null hypotheses, in the same sense as they would if there were no selection. No coordination is required between different research groups.
+\subsection{Comparison to Familywise Error Rate}
+
+Selective error control is neither weaker nor stronger than control of the familywise error rate (FWER), which is the probability of rejecting any true null hypothesis:
+\begin{equation}
+  \text{FWER} = \P_F(\phi_q(Y) = 1 \text{ for any } q \text{ with } H_0(q) \ni F).
+\end{equation}
+Although the FWER is usually considered the most conservative control guarantee, it does not scale easily across different researchers: suppose that in Example \ref{ex:file_drawer}, each observation $Y_i$ is collected by a different scientific research team at a different university, with each team then publishing the nominal level-$\alpha$ test if $|Y_i|>1$ and otherwise moving on to another project. At the level of a single research group and experiment, FWER is controlled, but there is a major unaccounted-for multiplicity problem if we consider the discipline as a whole.
+
+By contrast, selective error control scales naturally across multiple research groups and requires no coordination among groups. If each research team in a discipline controls the selective error rate for each of its own experiments, then the discipline as a whole will achieve long-run control of the type I error rate among true {\em selected} null hypotheses, just as they would if there were no selection.
 \begin{proposition}[Discipline-Wide Error Control]\label{prop:disciplineWide}
 Suppose there are $n$ independently operating research groups in a scientific discipline with a shared, countable question space $\cQ$. Research group $i$ collects data $Y_{i}\sim F_{i}$, applies selection rule $\hcQ_{i}(Y_{i})\sub \cQ$, and carries out selective level-$\alpha$ tests $(\phi_{q,i}(y_{i}), q\in\hcQ_{i})$.
 Assume each research group has probability at least $\delta>0$ of carrying out at least one test of a true null, and for some common $B<\infty$,
@@ -289,8 +303,9 @@ Then as $n$ grows, the discipline as a whole achieves long-run control over the 
   \limsup_{n\to\infty} \frac{\textnormal{\# false rejections}}{\textnormal{\# true nulls selected}} \leqAS \alpha.
 \end{equation}
 \end{proposition}
-The proof is deferred to Appendix~\ref{sec:disciplineWideProof}. Though the assumption of independence across research groups can be weakened without necessarily affecting the conclusion, we do not pursue such generalizations. Note that there is no counterpart to Proposition~\ref{prop:disciplineWide} for multiple-inference error rates such as the false discovery rate (FDR) \citep{benjamini1995controlling} or familywise error rate (FWER); even if every research group controls its own FWER or FDR at level $\alpha$, there is no guarantee we will control FWER or FDR after aggregating across the different groups.
+The proof is deferred to Appendix~\ref{sec:disciplineWideProof}. %Though the assumption of independence across research groups can be weakened without necessarily affecting the conclusion, we do not pursue such generalizations.
 
+There is no counterpart to Proposition~\ref{prop:disciplineWide} for other popular error rates such as the false discovery rate (FDR) \citep{benjamini1995controlling} or familywise error rate (FWER). Section~\ref{sec:multiple} discusses further the relationship between selective error control and other common error rates in multiple inference.
 
 \subsection{Selective Confidence Intervals}\label{sec:ci}
 
@@ -338,12 +353,12 @@ The selective non-coverage probability is
 \label{fig:finer}
 \end{figure}
 
-Because performing inference conditional on a random variable effectively disqualifies that variable as evidence against a hypothesis, we will typically want to condition on as little data as possible in stage two. Even so, some selective inference procedures condition on more than $A_q$. For example, \sampOrData splitting can be viewed as inference conditional on $Y_{1}$, the part of the data used for selection. More generally, we say a {\em selection variable} is any variable $S_q(Y)$ whose level sets partition the sample space more finely than $A_q$; i.e., $A_q \in \sF(S_q)$. Informally, we can think of conditioning on a finer partition of $A_q$, as shown in Figure~\ref{fig:finer}.
+Because performing inference conditional on a random variable effectively disqualifies that variable as evidence against a hypothesis, we will typically want to condition on as little data as possible in stage two. Even so, some selective inference procedures condition on more than $A_q$. For example, \sampOrData splitting can be viewed as inference conditional on $Y_{1}$, the part of the data used for selection. More generally, we say a {\em selection variable} is any variable $S_q(Y)$ whose level sets partition the sample space more finely than $A_q$ does; i.e., $A_q \in \sF(S_q)$. Informally, we can think of conditioning on a finer partition of $A_q$, as shown in Figure~\ref{fig:finer}.
 
 
 We say $\phi$ controls the {\em selective type I error with respect to $S_q$} at level $\alpha$ if the error rate is less than $\alpha$ given $S_q=s$ for $\{S_q=s\}\sub A_q$. More formally,
 \begin{equation}\label{eq:selT1S}
-  \E_F\left[\phi(Y)\1_{A_q}(Y) \gv S_q \right] \leqAS \alpha, \;\;\text{ for all } F\in H_0
+  \E_F\left[\phi(Y)\1_{A_q}(Y) \gv S_q \right] \leqAS \alpha, \;\;\text{ for all } F\in H_0(q)
 \end{equation}
 Taking $S_q(y) = \1_{A_q}(y)$, the coarsest possible selection variable, recovers the baseline selective type I error in~(\ref{eq:selT1}). The definition of a selective confidence set may be generalized in the same way.
 
@@ -363,7 +378,7 @@ If $F\in H_0$, then
 \end{equation*}
 \end{proof}
 Because $S(y) = \1_A(y)$ is the coarsest possible choice, a test controlling the type I error w.r.t. any other selection variable also controls the selective error in~(\ref{eq:selT1}). At the other extreme, if $S(y) = y$, then we cannot improve on the trivial ``coin-flip'' test $\phi(y)\equiv \alpha$. Proposition~\ref{prop:fineCont} suggests that we will typically sacrifice power as we move from coarser to finer selection variables.
-Even so, refining the selection variable can be useful for computational reasons. For example, in the case of the lasso, by conditioning additionally on the signs of the nonzero $\hat\beta_j$, the selection event becomes a convex region instead of up to $2^{|\hM|}$ disjoint convex regions \citep{lee2013exact}. Another valid reason to refine $S_q$ beyond $\1_{A_q}$ is to strengthen our inferential guarantees in a meaningful way; for example, we can achieve achieve false coverage-statement rate (FCR) control by choosing $S_q=(\1_{A_q}(Y),|\hcQ(Y)|)$ (see Section~\ref{sec:multiple}, Proposition~\ref{prop:fcrCont}).
+Even so, refining the selection variable can be useful for computational reasons. For example, in the case of the lasso, by conditioning additionally on the signs of the nonzero $\hat\beta_j$, the selection event becomes a convex region instead of the union of up to $2^{|\hM|}$ disjoint convex regions \citep{lee2016exact}. Another valid reason to refine $S_q$ beyond $\1_{A_q}$ is to strengthen our inferential guarantees in a meaningful way; for example, we can achieve achieve false coverage-statement rate (FCR) control by choosing $S_q=(\1_{A_q}(Y),|\hcQ(Y)|)$ (see Section~\ref{sec:multiple}, Proposition~\ref{prop:fcrCont}).
 
 \capSampOrData splitting corresponds to setting every selection variable equal to $S = Y_{1}$. As a result, \sampOrData splitting does not use all the information that remains after conditioning on $A$, as we see informally in the three-stage filtration
 \begin{equation}\label{eq:ssWaste}
@@ -381,7 +396,8 @@ The conditional expectation
 \begin{equation}
   \cI_{Y\gv S}(\theta; S) = -\E\left[\grad^2 \ell(\theta;\;Y \gv S) \gv S\right]
 \end{equation}
-is the {\em leftover Fisher information} after selection at $S(Y)$.
+is the {\em leftover Fisher information} after selection at $S(Y)$ (the leftover information is essentially the same as the missing information of \citet{orchard1972missing}, but we find ``leftover'' to be a more intuitive descriptor than missing in this context since the information is at our disposal). 
+
 Taking expectations in~(\ref{eq:infoPartition}), we obtain
 \begin{equation}
   \E\left[\cI_{Y\gv S}(\theta; S)\right] \;=\; \cI_Y(\theta) - \cI_S(\theta) \;\preceq\; \cI_Y(\theta).
@@ -425,45 +441,58 @@ Figure~\ref{fig:umpuUnivar} shows the confidence intervals that result from inve
 
 \subsection{Conceptual Questions}\label{sec:conceptual}
 
-We now pause to address conceptual objections that may have occurred to a skeptical reader.
+We now pause to address conceptual objections we have encountered when explaining our work. These objections can be most easily expressed, and answered, in the setting where there is a single selected model and a single selected hypothesis to test or confidence interval to construct (i.e., $\hcQ$ is always a singleton).
 
-\subsubsection{How Can the Model Be Random?}\label{sec:howRandom}
+There is a common theme in every one of the conceptual objections to follow: they are all equally good grounds for objecting to data splitting, or for that matter, to selecting a model and hypothesis based on a prior experiment whose outcome was random. Thus, a good exercise is to ask ourselves how we would answer the same question if it were asked about data splitting; most likely, the same answer applies equally well to data carving.
 
-In our framework, inference is based on a probabilistic model that is allowed to be chosen randomly, based on the data $Y$; the reader may wonder whether that randomness muddies the interpretation of whatever inference is carried out in the second stage.
+\subsubsection{How can the model be random?}\label{sec:howRandom}
 
-First, note that in our framework the {\em true} sampling distribution $F$ is not ``selected'' in any sense; it is entirely outside the analyst's control. The only thing selected is the {\em working model}, a tool the analyst uses to carry out inference, which may or may not include the true $F$.
+In our framework, inference is based on a statistical model $M$ that is allowed to be chosen randomly, based on the data $Y$. A common first reaction is that if the data are generated according to the model, and the model is selected based on the data, then the whole business is circular and nonsensical.
 
-Thoughtful skeptics may find reasons for concern about any approach --- \sampOrData carving, \sampOrData splitting, or selecting a model based on a previous experiment --- in which a random model is selected, believing that statistical testing is only appropriate when a probabilistic model can be based purely on convincing theoretical considerations. We answer only that this point of view would rule out most scientific inquiries for which statistics is ever used. However, if one is comfortable with choosing a random model based on \sampOrData splitting or a previous experiment, we see no special reason to be any more concerned about choosing a random model based on \sampOrData carving.
+To resolve this conundrum, note that in our framework the {\em true} sampling distribution $F$ is not selected in any sense; it is entirely outside the analyst's control. The only thing selected is the {\em working model}, a tool the analyst uses to carry out inference, which may or may not include the true $F$. Thus, the sampling distribution $F$ comes first, then the data $Y$, then the model $M$. 
 
-In any case, it is by no means required that the model $M$ be random. For example, in our clinical trial example of Section~\ref{sec:clinical}, the probabilistic model is always the same but we choose which null hypotheses to test after inspecting the data. The same is true of the saturated-model selective $z$-test described in~\ref{sec:fullModel}.
+Random selection of models is not new and should not trouble or confuse us: $M$ would be just as random if it were selected via data splitting, or for that matter if it were based on a prior experiment.
+Thoughtful skeptics may find reasons for concern about all of these approaches, believing that statistical testing is only appropriate when a model can be based purely on convincing theoretical considerations. We answer only that this point of view would rule out most scientific inquiries for which statistics is ever used. However, for those who are comfortable with choosing a random model using \sampOrData splitting or a previous experiment, we see no special reason to be any more concerned about choosing a random model using \sampOrData carving.
 
-\subsubsection{What if the Selected Model is Wrong?}\label{sec:modelWrong}
+In any case, $M$ is by no means required to be random, and our conditional-inference framework applies in many interesting settings where $M$ is always the same pre-specified parametric or nonparametric model, but we adaptively choose which hypotheses to test or which parameters to estimate. For example, in our clinical trial example of Section~\ref{sec:clinical}, the statistical model is always the same but we choose which null hypotheses to test after inspecting the data. The same is true of the conditional confidence intervals of \citet{weinstein2013selection}, the saturated-model selective $z$-test proposed by \citet{lee2016exact} and discussed in~\ref{sec:fullModel}, and the rank verification methods proposed in \citet{hung2016rank}.
 
-If we were not writing about model selection, we might have begun by stating a formal mathematical assumption that the sampling distribution $F$ belongs to a known model $M$, and then devised a test $\phi$ that behaves well when $F\in M$. The same $\phi$ might not work well at all for $F\notin M$: for example, if we choose to apply the one-sample $t$-test of $\mu=0$ to a sample $Y_1,\ldots,Y_n$ whose observations are highly correlated, then the probability of rejection may be a great deal larger than the nominal $\alpha$, even if $\E[Y_i]=0$. This is not a mistake in the formal theory, nor does it make the $t$-test an inherently invalid test; rather, the validity or invalidity of a test is defined with respect to its behavior when $F\in H_0 \sub M$.
+\subsubsection{What if the selected model is wrong?}\label{sec:modelWrong}
 
-In any given application, the analyst must choose from among many statistical methods knowing that each one is designed to work under a particular set of assumptions about $F$ --- i.e., under a particular model $M$. Because our theory encompasses both the choice and the subsequent analysis, it would not be sensible to assume that the analyst is infallible and always selects a correct model. Typically some candidate models $M$ are correctly specified (i.e., $F\in M$), others are not ($F\notin M$), and the analyst can never know for sure which are which.
+If we were writing about a topic other than selective inference, we might have begun by stating a formal mathematical assumption that the sampling distribution $F$ belongs to a known model $M$, and then devised a test $\phi$ that behaves well when $F\in M$. The same $\phi$ might not work well at all for $F\notin M$: for example, if we choose to apply the one-sample $t$-test of $\mu=0$ to a sample $Y_1,\ldots,Y_n$ whose observations are highly correlated, then the probability of rejection may be a great deal larger than the nominal $\alpha$, even if $\E[Y_i]=0$. This is not a mistake in the formal theory, nor does it make the $t$-test an inherently invalid test; rather, the validity or invalidity of a test is defined with respect to its behavior when $F\in H_0 \sub M$.
 
-Of course, the possibility of misspecification is not restricted to adaptive procedures like \sampOrData carving and \sampOrData splitting: selecting an inappropriate model {\em after} seeing the data leaves us no better or worse off than if we had chosen the same inappropriate model {\em before} seeing the data. Each $\phi_q$ or $C_q$ is designed with respect to a particular model $M(q)$, and properties like selective type I error control or selective coverage only constrain its behavior for $F\in M(q)$.
+In any given application, the analyst must choose from among many statistical methods knowing that each one is designed to work under a particular set of parametric or nonparametric assumptions about $F$ --- i.e., under a particular model $M$. Because our theory encompasses both the choice and the subsequent analysis, it would not be sensible to assume that the analyst is infallible and always selects a correct model. Typically some candidate models $M$ are correctly specified, others are not, and the analyst can never know for sure which are which. Any model selection procedure using data splitting, data carving, or a prior experiment always carries a risk of selecting the wrong model, and in all cases the second-stage type I error guarantees are only in force when the model is correct.
+
+Of course, the possibility of misspecification is not restricted to adaptive procedures like \sampOrData carving and \sampOrData splitting: selecting an inappropriate model {\em after} seeing the data leaves us no better or worse off than if we had chosen the same inappropriate model {\em before} seeing the data. The alternative to {\em adaptive} model selection is not {\em infallible} model selection, it is {\em non-adaptive} model selection.
 
 There is a separate question of robustness: if $F\notin M$ but is ``close'' in some sense, we may still want our procedure to behave predictably. However, even if some model gives a reasonable approximation to $\cL(Y)$, there is no guarantee that the induced model for $\cL(Y \gv A)$ is reasonable, since conditioning can introduce new robustness problems.
-For example, suppose that a test statistic $Z_n(Y)$ tends in distribution to $N(0,1)$ under $H_0$ as $n\to \infty$. In a non-selective setting, we might be comfortable modeling it as Gaussian as a basis for hypothesis testing. In this case it is also true that ${\cL(Z_n \gv Z_n > c)}$ converges to a truncated Gaussian law for any fixed $c\in \R$, but the approximation may be much poorer for intermediate values of $n$. Worse, if we use increasing thresholds $c_n\to\infty$ with $n$, the truncated Gaussian approximation may never become reasonable.
+For example, suppose that a test statistic $Z_n(Y)$ tends in distribution to $N(0,1)$ under $H_0$ as $n\to \infty$. In a non-selective setting, we might be comfortable modeling it as Gaussian as a basis for hypothesis testing. In this case it is also true that ${\cL(Z_n \gv Z_n > c)}$ converges to a truncated Gaussian law for any fixed $c\in \R$, but the approximation may be much poorer for intermediate values of $n$. Worse, if we use increasing thresholds $c_n\to\infty$ with $n$, the truncated Gaussian approximation may never become reasonable. Understanding the interaction between selective inference and asymptotic approximations is an area of active ongoing study; see \citet{tian2017asymptotics,tibshirani2015uniform,tian2015selective,taylor2016post} for subsequent works discussing asymptotics without Gaussian assumptions.
+
+\subsubsection{Does the result have a marginal interpretation?}\label{sec:margInterp}
+
+Consider an adaptive clinical trial in which we select the most promising subgroup of patients based on some preliminary analysis, and then report a confidence interval for the average treatment effect on that subgroup. For some realizations of the data, we might decide to return an interval for the effect on men over the age of 45, and for other realizations we might decide to return an interval for the effect on Hispanic women with high blood pressure. Let $S(Y)$ denote the selected subpopulation, a random region of covariate space, let $\theta(s)$ denote the true average treatment effect on a given subpopulation $s$, and let $C_s(Y)$ denote the confidence interval we construct for $\theta(s)$ when $S(Y)=s$.
+
+We find that confusion often occurs when people attempt to interpret $C(Y) = C_{S(Y)}(Y)$ as a marginal confidence interval for $\theta(S(Y))$, the treatment effect on a {\em random} subpopulation. If we ran the experiment again with the same selection procedure, we might choose a completely different $S(Y)$, giving $C(Y)$ a completely different meaning, and 100 realizations of the data might produce 100 disjoint realizations of $C(Y)$, meant to cover 100 very different true parameter values.
+
+While technically correct, the above interpretation is usually best avoided. Rather, we recommend thinking of each $C_s$ as a different confidence interval for a different {\em fixed} parameter $\theta(s)$, having nothing to do with $C_{s'}$ for $s'\neq s$. During the selection stage, we choose one $C_s$ to construct and leave the other intervals undefined.
+
+In other words, the interval has no useful interpretation until the first stage is complete, after which $S(Y)$ is fixed: it is pointless to try to interpret an answer before we even decide what question to ask. It is true that we might have asked about a different parameter if the data had looked different. By the same token, we might have performed an entirely different experiment if our most recent grant application had been funded. Neither of these contingencies should be a source of confusion because experiments not performed, or parameters not selected, are irrelevant to the situation at hand.
 
 
 \subsection{Prior Work on Selective Inference}\label{sec:prior}
 
 This article takes its main inspiration from a
-recent ferment of work on the problem of inference in linear regression models after model selection. \citet{lockhart2014significance} derive an asymptotic test for whether the nonzero fitted coefficients at a given knot in the lasso path contain all of the true nonzero coefficients. \citet{taylor2014post} provided an exact (finite-sample) version of this result and extended it to the LARS path, while \citet{lee2013exact}, \citet{loftus2014significance}, and \citet{lee2014marginal} used similar approaches to derive exact tests for the lasso with a fixed value of regularization parameter $\lambda$, forward stepwise regression, and regression after marginal screening, respectively. All of the above approaches are derived assuming that the error variance $\sigma^2$ is known or an independent estimate is available.
+recent ferment of work on the problem of inference in linear regression models after model selection. \citet{lockhart2014significance} derive an asymptotic test for whether the nonzero fitted coefficients at a given knot in the lasso path contain all of the true nonzero coefficients. \citet{tibshirani2014exact} provided an exact (finite-sample) version of this result and extended it to the LARS path, while \citet{lee2016exact}, \citet{loftus2014significance}, and \citet{lee2014marginal} used similar approaches to derive exact tests for the lasso with a fixed value of regularization parameter $\lambda$, forward stepwise regression, and regression after marginal screening, respectively. All of the above approaches are derived assuming that the error variance $\sigma^2$ is known or an independent estimate is available.
 
-The present work attempts to unify the above approaches under a common theoretical framework generalizing the classical optimality theory of \citet{lehmann1955completeness}, and elucidate previously unexplored questions of power. It also lets us generalize the results to the case of unknown $\sigma^2$, and to arbitrary exponential families after arbitrary selection events.
+The present work attempts to unify the above approaches under a common theoretical framework generalizing the classical optimality theory of \citet{lehmann1955completeness}, and elucidate previously unexplored questions of power. It also lets us generalize the results to the case of unknown $\sigma^2$, and to arbitrary exponential families after arbitrary selection events. Since the initial appearance of this work, it has been applied in many other settings; see \citet{taylor2015statistical} for a recent review.
 
-Other works have viewed selective inference as a multiple inference problem. Recent work in this vein can be found in \citet{berk2013valid} and \citet{barber2014controlling}. Section~\ref{sec:multiple} argues that inference after model selection and multiple inference are distinct problems with different scientific goals; see \citet{benjamini2010simultaneous} for more discussion of this distinction. An empirical Bayes approach for selection-adjusted estimation can be found in \citet{efron2011tweedie}.
+Other works have viewed selective inference as a multiple inference problem. Recent work in this vein can be found in \citet{berk2013valid} and \citet{barber2015controlling}. Section~\ref{sec:multiple} argues that inference after model selection and multiple inference are distinct problems with different scientific goals; see \citet{benjamini2010simultaneous} for more discussion of this distinction. An empirical Bayes approach for selection-adjusted estimation can be found in \citet{efron2011tweedie}.
 
-There has also recently been work on inference in high-dimensional linear regression models, notably \citet{belloni2011inference}, \citet{belloni2014inference}, \citet{zhang2014confidence}, \citet{javanmard2013hypothesis}, and \citet{van2013asymptotically}; see \citet{dezeure2014high} for a review. These works focus on approximate asymptotic inference for a fixed model with many variables, while we consider finite-sample inference after selecting a smaller submodel to focus our inferential goals.
+There has also recently been work on inference in high-dimensional linear regression models, notably \citet{belloni2011inference}, \citet{belloni2014inference}, \citet{zhang2014confidence}, \citet{javanmard2014hypothesis}, and \citet{van2014asymptotically}; see \citet{dezeure2015high} for a review. These works focus on approximate asymptotic inference for a fixed model with many variables, while we consider finite-sample inference after selecting a smaller submodel to focus our inferential goals.
 
-\citet{leeb2005model,leeb2006can,leeb2008can} prove certainimpossibility results regarding estimating the distribution ofpost-selection estimators. These results do not apply to our framework; under the statistical models we use, the post-selection distributions of our test statistics are known and thus do not require estimation.
+\citet{leeb2005model,leeb2006can,leeb2008can} prove certain impossibility results regarding estimating the distribution of post-selection estimators. These results do not apply to our framework; under the statistical models we use, the post-selection distributions of our test statistics are known and thus do not require estimation.
 
 
-The foregoing works are frequentist, as is this work. Because Bayesian inference conditions on the entire data set, conditioning first on a selection event typically has no operative effect on the posterior: if $p$ and $\pi$ are respectively the marginal likelihood and prior, then $p(Y \gv A, \theta)\cdot \pi(\theta \gv A) \propto p(Y \gv \theta)\cdot \pi(\theta)$ for $Y\in A$  \citep{dawid1994selection}. \citet{yekutieli2012adjusted} argues that in certain cases it is more appropriate to use the likelihood conditional on selection condition the likelihood on selection without changing the prior to reflect that conditioning, resulting in a posterior proportional to $p(Y \gv A, \theta)\cdot \pi(\theta)$. The credible intervals discussed in \citet{yekutieli2012adjusted} resemble the confidence intervals proposed in this article, and the discussion therein presents a somewhat different perspective on how and why conditioning can adjust for selection.
+The foregoing works are frequentist, as is this work. Because Bayesian inference conditions on the entire data set, conditioning first on a selection event typically has no operative effect on the posterior: if $p$ and $\pi$ are respectively the marginal likelihood and prior, then $p(Y \gv A, \theta)\cdot \pi(\theta \gv A) \propto p(Y \gv \theta)\cdot \pi(\theta)$ for $Y\in A$  \citep{dawid1994selection}. \citet{yekutieli2012adjusted} argues that in certain cases it is more appropriate to condition the likelihood on selection without changing the prior to reflect that conditioning, resulting in a posterior proportional to $p(Y \gv A, \theta)\cdot \pi(\theta)$. The credible intervals discussed in \citet{yekutieli2012adjusted} resemble the confidence intervals proposed in this article, and the discussion therein presents a somewhat different perspective on how and why conditioning can adjust for selection.
 
 
 
@@ -481,7 +510,7 @@ Our framework for selective inference is especially convenient when $M$ correspo
 \begin{equation}\label{eq:exfam}
   Y \sim f_{\theta}(y) = \exp\{\theta'T(y) - \psi(\theta)\}\, f_0(y)
 \end{equation}
-with respect to some dominating measure. Then, the conditional distribution given $Y\in A$ for any measurable $A$ is another exponential family with the same natural parameters and sufficient statistics but different carrier distribution and normalizing constant:
+with respect to some dominating measure. Then, the conditional distribution given $Y\in A$ for any measurable $A$ is another exponential family with the same natural parameters and sufficient statistics but different carrier measure and normalizing constant:
 \begin{equation}
   (Y\gv Y\in A) \sim \exp\{\theta'T(y) -  \psi_A(\theta)\}\,
   f_0(y)\, \1_A(y)
@@ -573,6 +602,8 @@ Because $\cL( Y \gv A)$ is an exponential family, we can simply apply Theorem~\r
    \end{align}
 \end{corollary}
 
+We emphasize here that the test $\phi$ as defined above is not merely UMPU among selective tests that condition on $U$, but rather it is UMPU among {\em all} selective level-$\alpha$ tests; see \citet{lehmann2005testing} for more details. In some cases, it may be useful to interpret $\phi$ conditionally on $U=u$, for example if the observed $u$ leads to a more or less powerful test.
+
 It is worth keeping in mind that unbiasedness is only one way to choose a test when there is no completely UMP one. For example, another simple choice is to use the equal-tailed test from the same conditional law \eqref{eq:efCond}. The equal-tailed level-$\alpha$ rejection region is simply the union of the one-sided level-$\alpha/2$ rejection regions. While the equal-tailed and UMPU tests choose $c_i$ and $\gamma_i$ in different ways, both tests take the form~(\ref{eq:testForm}). In fact, as we will see next, {\em all} admissible tests are of this form, which implies that data splitting tests are usually inadmissible.
 
 \subsection{Conditioning, Admissibility, and Data Splitting}\label{sec:admissibility}
@@ -630,7 +661,7 @@ with $\theta\in\R$ and with the models for $Y_{i}$ both satisfying Model~\ref{mo
 Model~\ref{mod:ss} would, for example, cover the case where $Y_1$ and $Y_2$ are the responses for two linear regressions with different design matrices but the same regression coefficients.
 
 For a selection event ${A = A_1 \times \cY_2}$, we say $\phi$ is a
-{\em data-splitting test} if $\phi(Y) = \phi_2(Y_2)$; that is, the selection stage uses only $Y_{1}$ and the inference stage uses only $Y_{2}$. Again, by Rao-Blackwellization, we can assume w.l.o.g. that the test is of the form $\phi(T_2, U_2)$.
+{\em data-splitting test} if $\phi(Y) = \phi_2(Y_2)$; that is, the selection stage uses only $Y_{1}$ and the inference stage uses only $Y_{2}$. Again, by Rao-Blackwellization, we can assume without loss of generality that the test is of the form $\phi(T_2, U_2)$.
 
 Next, define the {\em cutoff gap} $g^*(\phi)$ as the largest $g\geq 0$ for which the acceptance and rejection regions are separated by a ``cushion'' of width $g$. If $T_2^*$ is a conditionally independent copy of $T_2$ given $U_2$, then
 \begin{equation}\label{eq:gapEvent}
@@ -665,7 +696,7 @@ also occurs with positive probability. Since the two events are independent, $B 
 
   Next, assume w.l.o.g. that the event in~(\ref{eq:gapEvent}) can occur with $T_2^*>T_2$ (otherwise we could reparameterize with natural parameter $\xi=-\theta$, for which $-T_i$ would be the sufficient statistics for $Y_i$). Then for some $\delta>g^*(\phi)$, the event
   \[
-  B = \left\{T_1 + \delta < T_1^*,\;\; T_2 < T_2^* < T_2 + \delta,\;\; \phi(T_2) > 0,\; \text{ and } \phi(T_2^*) < 1\right\}
+  B = \left\{T_1 + \delta < T_1^*,\;\; T_2 < T_2^* < T_2 + \delta,\;\; \phi(T_2,U_2) > 0,\; \text{ and } \phi(T_2^*,U_2) < 1\right\}
   \]
   occurs with positive probability for all $\theta,\zeta$. On $B$,
   \[
@@ -676,10 +707,8 @@ also occurs with positive probability. Since the two events are independent, $B 
 
 In the typical case $g^*=0$ and we have
 \begin{corollary}
-  Suppose $\phi$ is a data-splitting test of~(\ref{eq:hypEq}) in Model~\ref{mod:ss} with $g^*(\phi) = 0$. Then $\phi$ is inadmissible unless $T_1$ is a function of $U_1$ (that is, unless $T_1\in \msF(U_1)$).
+  Suppose $\phi$ is a data-splitting test of~(\ref{eq:hypEq}) in Model~\ref{mod:ss} with $g^*(\phi) = 0$. Then $\phi$ is inadmissible unless $T_1$ is a function of $U_1$ on $A$.
 \end{corollary}
-
-
 
 \begin{example}\label{ex:ssBad}
 To illustrate Theorem~\ref{thm:ssInadm}, consider a bivariate version of Example~\ref{ex:univar}:
@@ -726,14 +755,16 @@ discards $Y_{1}$ entirely, while \sampOrData carving uses the leftover informati
 \section{Selective Inference for Linear Regression}\label{sec:linReg}
 
 For a concrete example of the exponential family framework discussed in Section~\ref{sec:exfam}, we now turn to linear regression, which is one of the most important applications of selective inference. In linear regression, the data arise from a multivariate normal distribution
-\[Y \sim N_n(\mu, \;\sigma^2 I_n), \]
+\begin{equation}\label{eq:satModel}
+  Y \sim N_n(\mu, \;\sigma^2 I_n),
+\end{equation}
 where $\mu$ is modeled as
 \begin{equation}\label{eq:subModel}
   \mu = \bX_M \beta^{M}.
 \end{equation}
-To avoid trivialities, we will assume that $\bX_M$ has full column rank for all $M$ under consideration, so that $\beta^{M}$ is well-defined.
+To avoid trivialities, we will assume that $\bX_M$ has full column rank for all $M$ under consideration, so that $\beta^{M}$ is well-defined. 
 
-Depending on whether $\sigma^2$ is assumed known or unknown, hypothesis tests for coordinates $\beta_j^{M}$ generalize either the $z$-test or the $t$-test. In the non-selective case, $z$- and $t$-tests are based on coordinates of the ordinary least squares (OLS) estimator $\hat\beta = \bX_M^\dagger Y$, where  $\bX_M^\dagger$ is the Moore-Penrose pseudoinverse. For a particular $j$ and $M$, it will be convenient to write $\hat\beta_j^M = \eta'Y$ with
+Depending on whether $\sigma^2$ is assumed known or unknown, hypothesis tests for coordinates $\beta_j^{M}$ generalize either the $z$-test or the $t$-test. In the non-selective case, $z$- and $t$-tests are based on coordinates of the ordinary least squares (OLS) estimator $\hat\beta = \bX_M^\dagger Y$, where  $\bX_M^\dagger$ is the Moore-Penrose pseudoinverse. For a particular $j$ and $M$, it will be convenient to write $\hat\beta_j^M = {\eta_j^M}'Y$ with
 \begin{equation}
   {\eta_j^M}= \frac{X_{j\cdot M}}{\|X_{j\cdot M}\|^2}, \quad \text{ where } X_{j\cdot M} = \proj_{\bX_{M\setminus j}}^\perp X_j
 \end{equation}
@@ -741,11 +772,9 @@ is the remainder after adjusting $X_j$ for the other columns of $X_M$, and $\pro
 \begin{equation}\label{eq:testStats}
   Z = \frac{{\eta_j^M}'Y}{\sigma \|{\eta_j^M}\|} \quad \text{ and } \quad \widetilde T = \frac{{\eta_j^M}'Y}{\hat\sigma \|{\eta_j^M}\|}
 \end{equation}
-are respectively distributed as $N(0,1)$ and $t_{n-|M|}$ under $H_0:\, \beta_j^M = 0$. Henceforth, we will suppress the subscript and superscript for $\eta_j^M$, simply writing $\eta$ when there is no ambiguity.
+are respectively distributed as $N(0,1)$ and $t_{n-|M|}$ under $H_0:\, \beta_j^M = 0$. Henceforth, we will suppress the subscript and superscript for $\eta_j^M$, simply writing $\eta$ when there is no ambiguity. The optimal selective $t$- and $z$-tests are based on the same test statistics, but compared against different null distributions.
 
-We will see that the optimal selective versions of these tests are based on the same test statistics, but compared against different null distributions.
-
-
+We consider two distinct modeling frameworks: Section~\ref{sec:reducedModel} concerns inference under the more restrictive {\em selected linear model}, the family of distributions for which~\eqref{eq:subModel} and~\eqref{eq:satModel} both hold, while Section~\ref{sec:fullModel} concerns inference under the more general {\em saturated model} which assumes only~\eqref{eq:satModel} and performs inference on ${\eta_j^M}'\mu$. As we will see, selected-model tests can be more powerful than saturated-model tests, but the extra power comes at a price since the inferences are only valid under more restrictive modeling assumptions. Section~\ref{sec:fullVLinear} compares and contrasts the two approaches.
 
 \subsection{Inference Under the Selected Model}\label{sec:reducedModel}
 
@@ -763,10 +792,10 @@ Otherwise, $\|Y\|^2$ represents another sufficient statistic and inference is ba
 \end{equation}
 Decomposing
 \begin{align}
-  X_j'y
-  &= X_j'\proj_{\bX_{M\setminus j}} y
-  + X_j'\proj_{\bX_{M\setminus j}}^\perp y \\
-  &= X_j'\proj_{\bX_{M\setminus j}} y + \|X_{j.M}\|^2 \eta'y,
+  X_j'Y
+  &= X_j'\proj_{\bX_{M\setminus j}} Y
+  + X_j'\proj_{\bX_{M\setminus j}}^\perp Y \\
+  &= X_j'\proj_{\bX_{M\setminus j}} Y + \|X_{j.M}\|^2 \eta'Y,
 \end{align}
 we see that $Z=\eta'Y / \sigma \|\eta\|$ is a fixed affine transformation of $X_j'Y$ once we condition on $X_{M\setminus j}'Y$. If $\sigma^2$ is known, then, we can equivalently base our selective test on
 \begin{equation}
@@ -780,13 +809,13 @@ If $\sigma^2$ is unknown, we may observe further that
 = \frac{\|Y\|^2 - \|\proj_{\bX_{M\setminus j}} Y\|^2 - (\eta'Y)^2/\|\eta\|^2}{n-|M|}.
 \end{equation}
 Writing $Z_0(Y) = \eta'Y / \|\eta\|$, we have
-$\widetilde T(Y) = (n-|M|) \,Z_0/(\|Y\|^2 - \|\proj_{X_{M\setminus j}} Y\|^2 - Z_0^2)$, which is a monotone function of $\eta'Y$ after fixing $\|Y\|^2$ and $X_{M\setminus j}'Y$. Thus, our test is based on the law of
+$\widetilde T(Y) = (n-|M|) \,Z_0/(\|Y\|^2 - \|\proj_{X_{M\setminus j}} Y\|^2 - Z_0^2)$, which is a monotone function of $\eta'Y$ after fixing $\|Y\|^2$ and $X_{M\setminus j}'Y$. Thus, our test is based on the appropriate conditional law of
 \begin{equation}
   \cL_{\beta_j/\sigma^2}\left(\widetilde T \Gv {\bX_{M\setminus j}}'Y, \; \|Y\|, \; A\right).
 \end{equation}
 Note that, given $A$, $\hat\sigma^2$ in~(\ref{eq:sigmaSq}) is neither unbiased for $\sigma^2$ nor $\chi^2$-distributed. We recommend against viewing it as a serious estimate of $\sigma^2$ in the selective setting.
 
-Constructing a selective $t$-interval is not as straightforward as the general case described in Section~\ref{sec:monte} because $\beta_j$ is not a natural parameter of the selected model; rather, $\beta_j/\sigma^2$ is. Testing $\beta_j=0$ is equivalent to testing $\beta_j/\sigma^2=0$, but testing $\beta_j=c$ for $c\neq 0$ does not correspond to any point null hypothesis about $\beta_j/\sigma^2$. However, we can define
+Constructing a selective $t$-interval is not as straightforward as the general case described in Section~\ref{sec:monte} because $\beta_j$ is not a natural parameter of the selected model; rather, $\beta_j/\sigma^2$ is. Testing $\beta_j=0$ is equivalent to testing $\beta_j/\sigma^2=0$, but testing $\beta_j=b$ for $b\neq 0$ does not correspond to any point null hypothesis about $\beta_j/\sigma^2$. However, we can define
 \begin{equation}
   \widetilde Y = Y-b X_j\sim N(\bX \beta - bX_j, \sigma^2I).
 \end{equation}
@@ -803,9 +832,9 @@ Even if we do not take the linear model~(\ref{eq:subModel}) seriously, there is 
 \end{equation}
 We call $\theta^{M}$ the {\em least squares coefficients} for $M$. According to this point of view, each $\theta_j^{M}$ corresponds to the linear functional ${\eta_j^M}'\mu$.
 
-This point of view is convenient because the least-squares parameters are well-defined under the more general saturated model~(\ref{eq:fullModel}), leading to meaningful inference even if we do a poor job of selecting predictors. In particular, \citet{berk2013valid} adopt this perspective as a way of avoiding the need to consider multiple candidate probabilistic models.
+This point of view is convenient because the least-squares parameters are well-defined under the more general saturated model~(\ref{eq:fullModel}), leading to meaningful inference even if we do a poor job of selecting predictors. In particular, \citet{berk2013valid} adopt this perspective as a way of avoiding the need to consider multiple candidate statistical models.
 
-Several recent articles have tackled the problem of exact selective inference in linear regression after specific selection procedures~\citep{lee2013exact,loftus2014significance,lee2014marginal}. These works, as well as \citet{berk2013valid}, assume the error variance is known, or that an estimate may be obtained from independent data, and target least-squares parameters in the saturated model.
+Several recent articles have tackled the problem of exact selective inference in linear regression after specific selection procedures~\citep{lee2016exact,loftus2014significance,lee2014marginal}. These works, as well as \citet{berk2013valid}, assume the error variance is known, or that an estimate may be obtained from independent data, and target least-squares parameters in the saturated model.
 
 Under the selected model, $\beta_j^{M} = \theta_j^{M} = \eta'\mu$, whereas under the saturated model $\beta^{M}$ may not exist (i.e., there is no $\beta^M$ such that $\mu = \bX_M\beta^M$). Compared to the selected model, the saturated model has $n-|M|$ additional nuisance parameters corresponding to $\proj_{\bX_M}^\perp \mu$.
 
@@ -841,23 +870,22 @@ When $\sigma^2$ is known, we have a choice whether to carry out the $z$-test wit
 \begin{equation}
   U = {\bX_{M\setminus j}}' Y, \quad \text{ and } \quad V = \proj_{\bX_M}^\perp Y,
 \end{equation}
-we must choose whether to condition on $U$ and $V$ (saturated model) or only $U$ (selected model). Conditioning on both $U$ and $V$ can never increase our power relative to conditioning only on $U$, and will in most cases lead to an inadmissible test per Theorem~\ref{thm:ssInadm}.
+we must choose whether to condition on $U$ and $V$ (saturated model) or only $U$ (selected model). Conditioning on both $U$ and $V$ can never increase our power relative to conditioning only on $U$, and (unless the tests coincide) will lead to an inadmissible test per Theorem~\ref{thm:ssInadm}.
 
 In the non-selective case, this choice makes no difference at all since $T, U,$ and $V$ are mutually independent.
 In the selective case, however, the choice may be of major consequence as it can lead to very different tests. In general, $T, U,$ and $V$ are not conditionally independent given $A$, and $\proj_{\bX_M}^\perp \mu$ may play an important role in determining the conditional distribution of $T$. If we needlessly condition on $V$, we may lose a great deal of power, whereas failing to condition on $V$ could lead us astray if $\proj_{\bX_M}^\perp \mu$ is large. A simple example can elucidate this contrast.
 
 \begin{example}\label{ex:bivar}
-  Suppose that $y\sim N_2(\mu, I_2)$, with design matrix $\bX = I_2$, and we choose the best one-sparse model. Our selection procedure chooses $M=\{1\}$ if $|Y_1|>|Y_2|$, and $M=\{2\}$ otherwise.
+  Suppose that $y\sim N_2(\mu, I_2)$, with design matrix $\bX = I_2$, and we choose the best-fitting one-sparse model. That is, we choose $M=\{1\}$ if $|Y_1|>|Y_2|$, and $M=\{2\}$ otherwise.
 
 Figure~\ref{fig:fullvred} shows one realization of this process with $Y=(2.9,2.5)$. $|Y_1|$ is a little larger than $|Y_2|$, so we choose $M=\{1\}$. The yellow highlighted region $A=\{|Y_1|>|Y_2|\}$ is the chosen selection event, and the selected model is
 \begin{equation}
   Y \sim N_2\left((\mu_1,0), I_2\right).
 \end{equation}
-In this case, $T=Y_1$, $V=Y_2$, and there is no $U$ since $\bX_M$ has only one column. The selected-model test is based on $\cL(Y_1 \gv A)$, whereas the saturated-model test is based on $\cL(Y_1 \gv Y_2, A)$. The second conditioning set, a union of two rays, is plotted in brown. Under the hypothesis $\mu=0$, the realized $|Y_1|$ is quite large given $A$, giving $p$-value 0.015. By contrast, $|Y_1|$ is not terribly large given $\{Y_2=2.5\}\cap A = \{Y_2=2.5, |Y_1|>2.5\}$, leading to $p$-value 0.30.
+In this case, $T=Y_1$, $V=Y_2$, and there is no $U$ since $\bX_M$ has only one column. The selected-model test is based on $\cL(Y_1 \gv A)$, whereas the saturated-model test is based on $\cL(Y_1 \gv Y_2, A)$. The second conditioning set, a union of two rays, is plotted in brown. Under the hypothesis $\mu=0$, the realized $|Y_1|$ is quite large given $A$, giving $p$-value 0.007. By contrast, $|Y_1|$ is not terribly large given $\{Y_2=2.5\}\cap A = \{Y_2=2.5, |Y_1|>2.5\}$, leading to $p$-value 0.30.
 \end{example}
 
-The difference between the saturated and selected models is especially important in early steps of sequential model-selection procedures that use a form of the saturated-model $z$-test. It has been observed in several cases that if there are two strong variables with similar effect sizes, the $p$-value in the first step may not be very small \citep{taylor2014post,g2013adaptive}. We will explore this subtle issue further in a forthcoming companion paper dealing with sequential model selection.
-
+The selected-model approach is especially well-suited for testing goodness of fit of a selected linear model --- in that case, we prefer the test {\em not} to have level $\alpha$, but rather to reject with high probability, when important variables are not selected. \citet{fithian2015adaptive} consider sequential goodness-of-fit testing in a ``path'' of increasingly complex models selected by a method like the lasso or forward stepwise regression. As Example~\ref{ex:bivar} illustrates, the saturated-model $p$-value is especially large for ``near ties'' when $|Y_1|$ is not much larger than $|Y_2|$. As a result, the selected-model test can be much more powerful in early steps of the path where multiple strong variables compete to enter the model first. For more details see \citet{fithian2015adaptive}.
 
 \begin{figure}
   \centering
@@ -878,7 +906,7 @@ The difference between the saturated and selected models is especially important
     \caption{ Conditional distributions of $Y_1$ under
       $H_0:\mu_1 = 0$. Under the hypothesis
       $\mu=0$, the realized  $|Y_1|$ is  quite large given $A$,
-      giving  $p$-value 0.015. By contrast, $|Y_1|$ is not too large
+      giving  $p$-value 0.007. By contrast, $|Y_1|$ is not too large
       given $A \cap \{y:\; y_2=Y_2\}$, giving
       $p$-value 0.3.}
   \end{subfigure}
@@ -900,14 +928,14 @@ We saw in Section~\ref{sec:exfam} that inference in the one-parameter exponentia
 
 \subsection{Gaussians Under the Saturated Model}\label{sec:classifying}
 
-As we discussed in Section~\ref{sec:fullModel}, the previous papers by \citet{lee2013exact,loftus2014significance,lee2014marginal} adopted the saturated model viewpoint with known $\sigma^2$. In this case, $\cL_\theta(T\gv U, A) = \cL_\theta\left( \eta'Y \Gv \proj_\eta^\perp Y, \; A\right)$ is a truncated univariate Gaussian, since $\eta' Y$ is a Gaussian random variable and $\proj_\eta^\perp Y$ is independent of $\eta' Y$. If $A$ is convex, then the truncation is to an interval $[\cV^-(Y), \cV^+(Y)]$, where the endpoints represent the maximal extent one can move in the $\eta$ direction at a ``height'' of $\proj_\eta^\perp Y$, while still remaining inside $A$, i.e.,
+As we discussed in Section~\ref{sec:fullModel}, the previous papers by \citet{lee2016exact,loftus2014significance,lee2014marginal} adopted the saturated model viewpoint with known $\sigma^2$. In this case, $\cL_\theta(T\gv U, A) = \cL_\theta\left( \eta'Y \Gv \proj_\eta^\perp Y, \; A\right)$ is a truncated univariate Gaussian, since $\eta' Y$ is a Gaussian random variable and $\proj_\eta^\perp Y$ is independent of $\eta' Y$. If $A$ is convex, then the truncation is to an interval $[\cV^-(Y), \cV^+(Y)]$, where the endpoints represent the maximal extent one can move in the $\eta$ direction at a ``height'' of $\proj_\eta^\perp Y$, while still remaining inside $A$, i.e.,
 \begin{align}
   \cV^{+}(Y) &= \sup_{\{t:\,Y + t\eta \,\in\, A\}} \eta'(Y+t\eta)\\[5pt]
   \cV^{-}(Y) &= \inf_{\{t:\,Y + t\eta \,\in\, A\}} \eta'(Y+t\eta).
 \end{align}
 The geometric intuition is illustrated in Figure~\ref{fig:blob}.
 
-When $A$ is specifically a polytope, we can obtain closed-form expressions for $\cV^-$ and $\cV^+$. The generalization to regions $A$ that are non-convex is straightforward (i.e., instead of truncating to a single interval, we truncate to a union of intervals). For further discussion of these points, see \citet{lee2013exact}.
+When $A$ is specifically a polytope, we can obtain closed-form expressions for $\cV^-$ and $\cV^+$. The generalization to regions $A$ that are non-convex is straightforward (i.e., instead of truncating to a single interval, we truncate to a union of intervals). For further discussion of these points, see \citet{lee2016exact}.
 
 
  \begin{figure}
@@ -921,35 +949,40 @@ When $A$ is specifically a polytope, we can obtain closed-form expressions for $
 
 \subsection{Monte Carlo Tests and Intervals}\label{sec:monte}
 
-More generally, if we can obtain a stream of samples from $\cL_\theta(T\gv U, A)$ for any value of $\theta$, then we can carry out hypothesis tests and construct intervals. This can be done efficiently via rejection sampling if, for example, we can sample efficiently from $\cL_\theta(Y\gv U)$ and $\P_\theta(Y \in A \gv U)$ is not too small. Otherwise, more specialized sampling approaches may be required.
+In a more generic setting, we may not have an easy formula for conditional law of $T$. In that case, there are several options for inference using Monte Carlo methods.
 
-More generally, we consider how to construct a test based on the statistic $Z$, which is distributed according to a one-parameter exponential family
+If we can obtain a stream of samples from $\cL_\theta(T\gv U, A)$ for any value of $\theta$, then we can carry out hypothesis tests and construct intervals. This can be done efficiently via rejection sampling if, for example, we can sample efficiently from $\cL_\theta(Y\gv U)$ and $\P_\theta(Y \in A \gv U)$ is not too small. Otherwise, more specialized sampling approaches may be required. A little more abstractly, we now consider constructing a test based on the statistic $Z$, which is distributed according to a one-parameter exponential family
 \begin{equation}
   Z \sim g_\theta(z) = e^{\theta z - \psi(\theta)}\,g_0(z).
 \end{equation}
-If in addition to $Z$ we are given an independent sequence
+
+\paragraph{Exact Monte Carlo Tests}
+Suppose that, in addition to $Z$, we are given an independent sequence
 from the reference distribution
 \begin{equation}
-  Z_1, \ldots, Z_n \simiid g_0(z),
+  Z_1, \ldots, Z_n \simiid g_0(z).
 \end{equation}
-then an exact Monte Carlo one-sided test of
-$H_0:\,\theta\leq 0$ rejects if the observed value $Z$ is
+Then an exact Monte Carlo one-sided test of
+$H_0:\,\theta \leq 0$ rejects if the observed value $Z$ is
 among the $(n+1)\,\alpha$ largest of $Z,Z_1,\ldots,Z_n$ \citep{barnard1963discussion}.
 
-By reweighting the samples, we can use the same sequence to test $H_0:\, \theta\leq \theta_0$ for any other $\theta_0$. Denote the importance-weighted empirical expectation as
+Even if i.i.d. samples are not available, the same procedure has level $\alpha$ provided the law of $(Z,Z_1,\ldots,Z_n)$ is {\em exchangeable} under $H_0$. \citet{besag1989generalized} propose an ingenious procedure for obtaining such an exchangeable sequence when we only know how to run a Markov chain with stationary distribution $g_0$: Beginning at $Z$, take $k\geq 1$ steps backward in the chain to $\widetilde Z$. Then, run $n$ independent chains $k$ steps forward, beginning each chain at $\widetilde Z$, and letting $Z_i$ denote the end state of the $i$th chain. If $Z\sim g_0$, the sequence is exchangeable. 
+
+Note that, while this test has level $\alpha$ for {\em any} $k, n \geq 0$, using small values of $k,n$ makes the test more random, reducing its power. If the chain is irreducible, then as $k,n\to \infty$, the test converges to the deterministic right-tailed level-$\alpha$ test of $H_0$.
+
+\paragraph{Approximate Monte Carlo Intervals}
+
+By reweighting the samples, we can use $(Z_1,\ldots,Z_n)$ to test $H_0:\, \theta\leq \theta_0$ for any other $\theta_0$. Denote the importance-weighted empirical expectation as
 \begin{align}
   \widehat \E_\theta \,h(Z) &=
   \frac{\sum_{i=1}^n h(Z_i) e^{\theta Z_i}}
   {\sum_{i=1}^n e^{\theta Z_i}}\\
   &\toAS \E_\theta \,h(Z) \quad \text{ as $n\to\infty$ for integrable } h.
 \end{align}
-In effect, we have put an exponential family ``through'' the empirical distribution of the $Z_i$ in the manner of \citet{efron1996using}; see also \citet{besag2001markov}. The Monte Carlo one-sided cutoff for a test of $H_0:\, \theta\leq \theta_0$ is the smallest $c_2$ for which
-\begin{equation}
-  \widehat \P_{\theta_0} (Z> c_2) \leq \alpha.
-\end{equation}
+In effect, we have put an exponential family ``through'' the empirical distribution of the $Z_i$ in the manner of \citet{efron1996using}; see also \citet{besag2001markov}. The Monte Carlo one-sided cutoff for a test of $H_0:\, \theta\leq \theta_0$ is the smallest $c_2$ for which $\widehat \P_{\theta_0} (Z> c_2) \leq \alpha$.
 The test rejects for $Z>c_2$ and randomizes appropriately at $Z=c_2$.
 
-The Monte Carlo UMPU two-sided test of $H_0:\,
+The two-sided test of $H_0:\,
 \theta=\theta_0$ is a bit more involved, but similar in principle. We can solve for
 $c_1,\gamma_1,c_2,\gamma_2$ for which
 \begin{align}\label{eq:levelAlpha}
@@ -964,7 +997,7 @@ interval. Monte Carlo inference as described above is computationally
 straightforward once $Z_1,\ldots,Z_n$ are obtained.
 
 More generally, the $Z_i$ could represent importance samples with weights $W_i$, or steps in a Markov chain with stationary distribution
-$g_{\theta_0}(z)$. The same methods apply as long as we still have
+$g_0(z)$. The same methods apply as long as we still have
 \begin{align}
   \widehat \E_\theta\, h(Z) &=
   \frac{\sum_{i=1}^n W_i\, h(Z_i)\, e^{\theta Z_i}}
@@ -972,8 +1005,8 @@ $g_{\theta_0}(z)$. The same methods apply as long as we still have
   &\toAS \E_\theta\, h(Z), \quad \text{ for integrable } h.
 \end{align}
 
-Numerical problems may arise in solving (\ref{eq:levelAlpha}--\ref{eq:uncorr}) for $\theta_0$ far away from the reference parameter used for sampling. Combining appropriately weighted samples from several reference values $\theta$ can help to keep the effective sample size from getting too small for any $\theta_0$. For further references on Monte Carlo inference see
-\citet{jockel1986finite, besag1989generalized,forster1996monte,mehta2000efficient}.
+Numerical problems may arise in solving (\ref{eq:levelAlpha}--\ref{eq:uncorr}) for $\theta_0$ far away from the reference parameter used for sampling. Combining appropriately weighted samples from several different reference values can help to keep the effective sample size from getting too small for any $\theta_0$. For further references on Monte Carlo inference see
+\citet{jockel1986finite,forster1996monte,mehta2000efficient}.
 
 
 \subsection{Sampling Gaussians with Affine and Quadratic Constraints}\label{sec:affine}
@@ -983,7 +1016,7 @@ In the case where $Y$ is Gaussian, several simplifications are possible. For one
 
 Efficient sampling from multivariate Gaussian distributions under such constraints is the main algorithmic challenge for most of the Gaussian selective tests proposed in this paper. The works cited above use the saturated model exclusively which means they do not require any sampling.
 
-In many cases, the sampling problem may be greatly facilitated by refining the selection variable that we use. For example, \citet{lee2013exact} propose conditioning on the variables selected by the lasso as well as the signs of the fitted $\hat\beta_j$, leading to a selection event consisting of a single polytope in $\R^n$. If we condition only on the selected variables and not on the signs, the selection event is a union of up to $2^s$ polytopes, where $s$ is the number of variables in the selected model (though most of the polytopes might be excluded after conditioning on $U$).
+In many cases, the sampling problem may be greatly facilitated by refining the selection variable that we use. For example, \citet{lee2016exact} propose conditioning on the variables selected by the lasso as well as the signs of the fitted $\hat\beta_j$, leading to a selection event consisting of a single polytope in $\R^n$. If we condition only on the selected variables and not on the signs, the selection event is a union of up to $2^s$ polytopes, where $s$ is the number of variables in the selected model (though most of the polytopes might be excluded after conditioning on $U$).
 
 Refining the selection variable never impairs the selective validity of the procedure, but it typically leads to a loss in power. However, this loss of power may be quite small if, for example, the conditional law puts nearly all of its mass on the realized polytope. This price in power is acceptable if it is the only way to obtain a tractable test. Quantifying the tradeoff between computation and power is an interesting topic for further work.
 
@@ -1076,8 +1109,7 @@ As a result, we can proceed just as we did in the case of linear regression in t
 
 A difficulty may arise for logistic or Poisson regression due to the discreteness of the response distribution $Y$. If some control variable $X_1$ is continuous, then for almost every realization of $X$, all configurations of $Y$ yield unique values of $U=X_1'Y$. In that case, conditioning on $X_1'Y$ means conditioning on $Y$ itself. No information is left over for inference, so that the best (and only) exact level-$\alpha$ selective test is the trivial one $\phi(Y)\equiv\alpha$. By contrast, if all of the control variables are discrete variables like gender or ethnicity, then conditioning on $U$ may not constrain $Y$ too much.
 
-Because $\bX'Y$ is approximately a multivariate Gaussian random variable, a more promising approach may to base inference on the asymptotic Gaussian approximation, though we will not pursue that here. \citet{tian2015asymptotics} discuss selective inference in certain non-Gaussian problems.
-
+Because $\bX'Y$ is approximately a multivariate Gaussian random variable, a more promising approach may be to base inference on the asymptotic Gaussian approximation as in \citet{taylor2016post}.
 
 \section{Simulation: High-Dimensional Regression}\label{sec:simulation}
 
@@ -1088,19 +1120,18 @@ We simulate from the model
 \begin{equation}
   Y \sim N(\bX \beta, I_n),
 \end{equation}
-with $\beta$ 7-sparse and its non-zero entries set to $7$. The signal to noise ratio (SNR) (magnitude of $\beta$) was chosen so that
+with $\beta$ 7-sparse and its non-zero entries set to $7$. The magnitude of $\beta$ was chosen so that
 \sampOrData splitting with half the data yielded a superset of the true variables on roughly 20\% of instances.
 For \sampOrData splitting and carving,  $Y$ is partitioned into selection and inference data sets $Y_{1}$ and $Y_{2}$, containing $n_1$ and $n_2=n-n_1$ data points respectively.
 
-We compare two procedures:
+We assume the error variance is known and carry out the Lasso on $Y_1$ with Lagrange parameter
+$$\lambda=2\E(\|X^T\epsilon\|_{\infty}), \quad \epsilon \sim N(0, I_n)$$ as described in \citep{negahban_unified}. We then compare two post-selection inference procedures:
 \begin{description}
 \item[\capSampOrData Splitting after Lasso on $Y_{1}$ ($\text{Split}_{n_1}$):] Use the lasso on $Y_{1}$ to select the model, and use $Y_{2}$ for inference.
 \item[\capSampOrData Carving after Lasso on $Y_{1}$ ($\text{Carve}_{n_1}$):] Use the lasso on $Y_{1}$ to select the model, and use $Y_{2}$ and whatever is left over of $Y_{1}$ for inference.
 \end{description}
-Procedure $\text{Carve}_{100}$ is inference after the using the lasso on the full data set $Y$.
-
-For the \sampOrData carving procedures, we use the selected-model $z$-test of Section~\ref{sec:reducedModel} after lasso variable selection using Lagrange parameter
-$$\lambda=2\E(\|X^T\epsilon\|_{\infty}), \quad \epsilon \sim N(0, \sigma^2 I)$$ as described in \citep{negahban_unified}. In addition, we condition on the signs of the active lasso coefficients, so that procedure $\text{Carve}_{100}$ is the inference-after-lasso test considered in \citet{lee2013exact}.\footnote{Because of the form of the selection event when we use the lasso after $n$ data points, the test statistic is conditionally independent of $\proj_{\bX_{M}}^\perp Y$. Thus, there is no distinction between the saturated- and selected-model $z$-tests after the lasso on all $n$ data points.}
+For the \sampOrData carving procedures, we use the selected-model $z$-test of Section~\ref{sec:reducedModel}.
+In addition, we condition on the signs of the active lasso coefficients, so procedure $\text{Carve}_{100}$ is the inference-after-lasso test proposed in \citet{lee2016exact}.\footnote{Because of the form of the selection event when we use the lasso after $n$ data points, the test statistic is conditionally independent of $\proj_{\bX_{M}}^\perp Y$. Thus, there is no distinction between the saturated- and selected-model $z$-tests after the lasso on all $n$ data points.}
 
 We know from Theorem~\ref{thm:ssInadm} that procedure $\text{Carve}_{n_1}$ strictly dominates procedure $\text{Split}_{n_1}$ for any $n_1$, but there is a selection--inference tradeoff between data-carving procedures $\text{Carve}_n$ and $\text{Carve}_{n_1}$ for $n_1<n$. $\text{Carve}_{n}$ uses all of the data for selection, and is therefore likely to select a superior model, whereas procedure $\text{Carve}_{n_1}$ reserves more power for the second stage.
 
@@ -1161,23 +1192,25 @@ Because procedure $\text{Carve}_{100}$ uses the most information in the first st
 
 Figure~\ref{fig:lassoTRADEOFF} shows the tradeoff curve of model selection success (as measured by the probability of successful screening) against second-stage power conditional on successful screening. As $n_1$ increases, stage-one performance improves while stage-two performance declines, but the decline is much slower for \sampOrData carving. Surprisingly, $\text{Carve}_{98}$ and $\text{Carve}_{99}$ have much higher power than $\text{Carve}_{100}$: 91\%, 86\%, and 80\% respectively. We cannot explain why holding out just one or two data points in the first stage improves power so dramatically. Better understanding this tradeoff is an interesting topic of further work.
 
-Finally, to check the robustness of \sampOrData carving, we replace the Gaussian errors with independent errors drawn from Student's $t$ distribution with five degrees of freedom. The numbers barely change at all; see Table~\ref{table:T5}. \citet{tian2015asymptotics} rigorously analyze the case of non-Gaussian errors.
+Finally, to check the robustness of \sampOrData carving, we replace the Gaussian errors with independent errors drawn from Student's $t$ distribution with five degrees of freedom. The numbers barely change at all; see Table~\ref{table:T5}. \citet{tian2017asymptotics} rigorously analyze the case of non-Gaussian errors.
 
 
-\section{Selective Inference and Multiple Inference}\label{sec:multiple}
+\section{Conditioning as a Device for Multiple Inference}\label{sec:multiple}
 
-A common approach to the problem of inference after selection is to replace the nominal error rate with an alternative joint error rate that is deemed appropriate to the scientific setting.
+To this point we have argued for controlling selective type I error as a goal in its own right, but it can also serve as a device for controlling more traditional multiple inference goals. In this section we discuss two examples: confidence intervals for selected parameters that control the false coverage-statement rate (FCR) and familywise error rate (FWER).
 
-For example, suppose that $\theta_q,\;q=1,\ldots,m$ correspond to parameters of a common model $M$. We designate a small number $R(Y)=|\hcQ(Y)|$ of them as interesting and construct a confidence interval $C_q(Y)$ for each $q\in \hcQ$. \citet{benjamini2005false} propose controlling the {\em false coverage-statement rate} (FCR)
+Suppose that $\theta_q,\;q=1,\ldots,m$ correspond to parameters of a common (fixed) model $M$. We adaptively designate a number $R(Y)=|\hcQ(Y)|$ of them as interesting and construct a confidence interval $C_q(Y)$ for each $q\in \hcQ$. \citet{benjamini2005false} propose controlling the {\em false coverage-statement rate} (FCR)
 \begin{equation}\label{eq:fcrV}
   \E\left[\frac{V}{\max(R,1)}\right],\quad \text{ where }\quad
   V(Y) = \left|\left\{q:\, q\in\hcQ, \;\theta_q(F) \notin C_q(Y)\right\}\right|
 \end{equation}
-is the number of non-covering intervals constructed.
+is the number of non-covering intervals constructed. 
 
-FCR control is closely related to selective coverage. By choosing appropriate selection variables $S_q$, we can adapt selective coverage to control the FCR.
+Other authors have addressed inference after selection by proposing to control the FWER, the chance that any selected test incorrectly rejects the null or any constructed confidence interval fails to cover its parameter. For example, the ``post-selection inference'' (PoSI) method of \citet{berk2013valid} constructs simultaneous $(1-\alpha)$ confidence intervals for the least-squares parameters of all linear regression models that were ever under consideration. As a result, no matter how we choose the model, the overall probability of constructing any non-covering interval is controlled at $\alpha$.
 
-\begin{proposition}[FCR Control via Selective Error Control]\label{prop:fcrCont}
+By choosing appropriate selection variables $S_q$, we can control the FCR or FWER as desired using intervals with selective coverage. Our proof generalizes and extends a result in~\citet{weinstein2013selection}, who also use conditional control to achieve FCR control in a specialized setting. Using a similar proof, we also show that using an {\em adaptive Bonferroni rule}, which adjusts the test's level based on the (random) number of intervals actually constructed, can achieve FWER control.
+
+\begin{proposition}[FCR and FWER Control via Selective Error Control]\label{prop:fcrCont}
   Assume $\cQ$ is countable with each $q\in \cQ$ corresponding to a different parameter $\theta_q$ for the same model $M$. Let $R(Y) = |\hcQ(Y)|$ with $R(Y)<\infty$ a.s., and define $V(Y)$ as in~(\ref{eq:fcrV}).
 
 If each $C_q$ enjoys coverage at level $1-\alpha$ given $S_q = \left(\1_{A_q}(Y),R(Y)\right)$, then the collection of intervals $(C_q, q\in \hcQ)$ controls the FCR at level $\alpha$:
@@ -1185,10 +1218,15 @@ If each $C_q$ enjoys coverage at level $1-\alpha$ given $S_q = \left(\1_{A_q}(Y)
   \E\left[\frac{V}{\max(R,1)}\right] \;\;\leq\;\;
   \E\left[\frac{V}{R} \Gv R \geq 1\right] \;\;\leq\;\; \alpha.
 \end{equation}
+If each $C_q$ enjoys coverage at level $1-\alpha/R(Y)$ given $S_q$, then $(C_q, q\in \hcQ)$ controls the FWER at level $\alpha$:
+\begin{equation}
+  \P\left[V \geq 1\right] \;\;\leq\;\; \alpha.
+\end{equation}
+
 \end{proposition}
 \begin{proof}
   Let $V_q(Y) = \1\left\{q\in \hcQ(Y),\, \theta_q(F) \notin C_q(Y)\right\}$,
-so that $V = \sum_{q\in\cQ}V_q$.  For $R\geq 1$, and for any $F\in M$,
+  so that $V = \sum_{q\in\cQ}V_q$. If $C_q$ has level-$\alpha$ selective coverage, then for $R\geq 1$, and for any $F\in M$,
   \begin{equation}
     \E_F\left[V \gv R \right]
     \;\;=\;\; \sum_{q\in\cQ} \E_F\left[ V_q \gv R\right]
@@ -1197,35 +1235,18 @@ so that $V = \sum_{q\in\cQ}V_q$.  For $R\geq 1$, and for any $F\in M$,
     \;\;=\;\; \alpha R,
   \end{equation}
   hence $\E\left[V/R \gv R\right] = \alpha$ for each $R\geq 1$.
+
+  We can repeat the argument when $C_q$ has level-$\alpha/R$ selective coverage, we obtain
+  $\E_F\left[V \gv R \right] \leq \alpha$. Marginalizing each bound over $R(Y)$ gives the result.
 \end{proof}
 
-Other authors have addressed inference after selection by proposing to control the FWER, the chance that any selected test incorrectly rejects the null or any constructed confidence interval fails to cover its parameter. For example, the ``post-selection inference'' (PoSI) method of \citet{berk2013valid} constructs simultaneous $(1-\alpha)$ confidence intervals for the least-squares parameters of all linear regression models that were ever under consideration. As a result, no matter how we choose the model, the overall probability of constructing any non-covering interval is controlled at $\alpha$.
+However, the converse of Proposition~\ref{prop:fcrCont} is not true: FWER control does {\em not} in general guarantee control of relevant selective error rates. For example, suppose that we construct an interval for the effect of red meat consumption on heart disease ($Q(Y)=1$) with probability 0.9 and for the effect of statins on heart disease ($Q(Y)=2$) otherwise. If $C_1$ and $C_2$ have selective error rates $\alpha_1=0.02$ and $\alpha_2 = 0.3$ respectively, the overall FWER is still controlled at $\alpha=0.05$.
 
-Selective error control can be adapted to control the FWER as well. If our selection rule always chooses a single hypothesis to test, then we have overall FWER control.
+Does our conservatism when asking about smoking compensate for our anti-conservatism when asking about coffee? Perhaps not; those readers who are primarily interested in statins will be consistently misled, and readers who are primarily interested in red meat consumption will be see unnecessarily conservative intervals. As such, averaging our error rates across the two questions, with two different interpretations, seems inappropriate.
 
-\begin{proposition}[FWER Control for Singleton $\hcQ$]\label{prop:fwerCont}
-  Assume that $|\hcQ(Y)| \eqAS 1$, and let $Q(Y)=(M(Y),H_0(Y))$ denote the single (random) selected model--hypothesis pair. If each $\phi_q$ controls the selective error at level $\alpha$, then the test $\phi(y)=\phi_{Q(y)}(y)$ controls the FWER at level $\alpha$:
-\begin{equation}
-  \E_F\left[ \phi(Y);\, F\in H_0(Y)\right] \leq \alpha
-\end{equation}
-\end{proposition}
-\begin{proof}
-Condition on $Q$:
-\begin{align}
-  \E_F\left[ \phi(Y)\1\{F\in H_0(Y)\}\right]
-    &= \E_F\left[\;\E_F\left[ \phi(Y) \gv Q(Y)\right]\1\{F\in H_0(Y)\} \;\right]\\
-    &\leq \alpha\,\P_F\left[  F\in H_0(Y) \right]
-\end{align}
-\end{proof}
-More generally, it is clear that if we construct $(\phi_q, q\in\cQ)$ to control any joint error rate conditional on the entire selected set $\hcQ$, we will also have marginal control of the same joint error rate.
+More problematically, if the different questions correspond to different and non-overlapping models --- for example, if we examine residuals to decide between a Poisson log-linear model and a negative-binomial model --- then it is especially unintuitive to focus on error rates averaged across the different choices of model.
 
-However, the converse of Proposition~\ref{prop:fwerCont} is not true: FWER control does {\em not} in general guarantee control of relevant selective error rates. For example, suppose $Q(Y)=1$ with probability 0.9 and $Q(Y)=2$ otherwise. If $\phi_1$ and $\phi_2$ have selective error rates $\alpha_1=0.02$ and $\alpha_2 = 0.3$ respectively, the overall FWER is still controlled at $\alpha=0.05$.
-
-Does our conservatism when asking question 1 compensate for our anti-conservatism when asking question 2? To answer this question we must consider not only mathematics but also the relevant scientific context. If the different questions represent a bag of anonymous, {\em a priori} undifferentiated hypotheses, then a joint error rate like the FWER or FDR may be a good proxy for our scientific goals. For example, when performing a large-scale genome-wide ``fishing expedition'' for loci associated with type II diabetes, the fraction of null genes among all purported discoveries is a very relevant quantity: it measures what fraction of our time and money will be wasted following up on false leads.
-
-In other scientific applications, however, different hypotheses have quite distinct identities and may vary greatly in their importance and interpretation. For example, a confidence interval for the effect of gender on salary after controlling for one's job title may be much more socially consequential than an interval for the effect of job title after controlling for gender. As such, averaging our error rates
-across the two questions is inappropriate.
-
+By contrast, if the different questions represent a bag of relatively anonymous, {\em a priori} undifferentiated hypotheses which we are prioritizing for follow-up research, such as in a genome-wise association study, then an error rate like the FDR is likely a better proxy for our scientific goals.
 
 \section{Discussion}\label{sec:discussion}
 
@@ -1238,7 +1259,7 @@ Happily, living up to this principle can be a simple matter in exponential famil
 
 Many challenges remain. Deriving the cutoffs for sample carving tests can be computationally difficult in general. In addition, the entire development of this article takes the model selection procedure $\hcQ$ as given, when in reality we can choose $\hcQ$. More work is needed to learn what model selection procedures lead to favorable second-stage properties.
 
-As data sets and research questions become more and more complex, we have less and less hope of specifying  adequate probabilistic models ahead of time. As such, a key challenge of complex research is to balance the goal of choosing a realistic model against the goal of inference once we have chosen it. We hope that the ideas in this article represent a step in the right direction.
+As data sets and research questions become more and more complex, we have less and less hope of specifying  adequate statistical models ahead of time. As such, a key challenge of complex research is to balance the goal of choosing a realistic model against the goal of inference once we have chosen it. We hope that the ideas in this article represent a step in the right direction.
 
 \section*{Reproducibility}
 
